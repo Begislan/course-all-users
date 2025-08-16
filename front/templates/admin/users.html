@@ -1,0 +1,72 @@
+{% extends "front/base.html" %}
+{% block title %}admin{% endblock %}
+{% block content %}
+
+<div class="container my-5">
+    <h2 class="text-center mb-4">Список пользователей</h2>
+
+    <div class="row g-4">
+        {% for user in users %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card user-card shadow-lg border-0 rounded-4 h-100 text-center">
+                <div class="card-body">
+                    <!-- Фото пользователя -->
+                    {% if user.photo %}
+                        <img src="{{ user.photo.url }}" alt="{{ user.username }}"
+                             class="rounded-circle mb-3 user-avatar shadow-sm">
+                    {% else %}
+                        <i class="bi bi-person-circle display-3 text-secondary mb-3"></i>
+                    {% endif %}
+
+                    <h5 class="card-title text-primary">{{ user.username }}</h5>
+                    <p class="card-text mb-1">{{ user.firstname }}</p>
+                    <p class="card-text mb-1">
+                        <i class="bi bi-envelope me-1"></i>{{ user.email }}
+                    </p>
+                {% if user.phone %}
+                    <p class="card-text mb-1">
+                        <i class="bi bi-telephone"></i>{{ user.phone }}
+                    </p>
+                {% endif %}
+
+                    <p class="card-text mb-3">
+                        <span class="fw-bold">Статус:</span> <span class="text-success">{{ user.get_user_type_display }}</span>
+                    </p>
+                    <div class="d-grid">
+                        <a href="{% url 'upload_users' user.id %}"
+                           class="btn btn-outline-success rounded-pill fw-bold hover-glow">
+                            <i class="bi bi-pencil-square me-1"></i> Изменить статус
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <p class="text-center text-muted">Нет пользователей</p>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+    .user-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .user-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0 20px rgba(0,0,0,0.2);
+    }
+    .hover-glow:hover {
+        box-shadow: 0 0 15px rgba(25, 135, 84, 0.6);
+        transform: scale(1.05);
+    }
+    .user-avatar {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border: 3px solid rgba(0,0,0,0.1);
+    }
+</style>
+
+
+
+{% endblock %}

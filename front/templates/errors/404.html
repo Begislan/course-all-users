@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+]
+
+{% extends "front/base.html" %}
+
+{% block content %}
+  <div style="text-align:center; padding:50px;">
+    <h1>Ошибка 404</h1>
+    <p>Страница не найдена 😢</p>
+    <a href="{% url 'home' %}">Вернуться на главную</a>
+  </div>
+{% endblock %}
+</body>
+</html>

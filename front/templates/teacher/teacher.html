@@ -1,0 +1,648 @@
+{% extends "front/base.html" %}
+{% load embed_filters %}
+{% block title %}{{ user.username }}{% endblock %}
+{% block content %}
+
+    <style>
+        header {
+            .dropdown-toggle::after {
+                display: none;
+            / / Убираем стандартную стрелочку
+            }
+
+            .dropdown-menu {
+                border-radius: 0.75rem;
+                padding: 0.5rem 0;
+            }
+        }
+
+    </style>
+
+    <header class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+        <div class="container-fluid d-flex justify-content-between align-items-center">
+            <!-- Лого / Имя пользователя -->
+            <div class="dropdown">
+                <a href="#"
+                   class="d-flex align-items-center text-white text-decoration-none dropdown-toggle"
+                   data-bs-toggle="dropdown"
+                   aria-expanded="false"
+                   aria-label="Профиль пользователя">
+                    {% if user.photo %}
+                        <img src="{{ user.photo.url }}" class="bi me-2" width="32" height="32" aria-hidden="true">
+
+                    {% endif %}
+                    <span class="fw-bold">{{ user.username }}</span>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end shadow">
+                    <li>
+                        <a class="dropdown-item d-flex align-items-center" href="{% url 'logout' %}">
+                            <i class="bi bi-box-arrow-right me-2"></i> Выход
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Ссылка на главную -->
+            <div>
+                <a href="/" class="btn btn-outline-light rounded-pill px-3 fw-semibold shadow-sm">
+                    На главную
+                </a>
+            </div>
+        </div>
+    </header>
+
+
+
+    <div class="container-fluid pb-3">
+        <div class="d-grid gap-3" style="grid-template-columns: 2fr 2fr 3fr;">
+
+            <!-- Колонка 1: Курсы -->
+            <div class="bg-white border rounded-4 p-4 shadow-sm">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h4 class="fw-bold text-gradient-primary">Мои курсы</h4>
+                    <button class="btn btn-success rounded-pill px-3" data-bs-toggle="modal"
+                            data-bs-target="#addCourseModal">
+                        <i class="bi bi-plus-lg me-1"></i> Добавить
+                    </button>
+                </div>
+
+                <div class="courses-list">
+                    {% for course in courses %}
+                        <div class="course-card p-3 mb-3 rounded-3 border hover-shadow transition-all">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center">
+                                    <div class="course-avatar me-3">
+                                        <img width="60" height="60" class="rounded-3 object-fit-cover"
+                                             src="
+
+
+
+
+
+                                                     {% if course.image %}{{ course.image.url }}{% else %}/static/images/default-course.png{% endif %}"
+                                             alt="{{ course.title }}">
+                                    </div>
+                                    <div>
+                                        <a href="{% url 'course_detail' course.id %}" class="text-decoration-none">
+                                            <h6 class="mb-0 fw-bold text-dark">{{ course.title }}</h6>
+                                        </a>
+                                        <small class="text-muted">Последнее изменение:
+                                            {{ course.updated_at|date:"d.m.Y" }}</small>
+                                    </div>
+                                </div>
+
+                                <div class="course-actions btn-group">
+                                    <button class="btn btn-sm btn-outline-secondary rounded-pill" data-bs-toggle="modal"
+                                            data-bs-target="#editCourseModal{{ course.id }}">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+
+                                    <form method="post" action="{% url 'delete_course' course.id %}"
+                                          style="display:inline">
+                                        {% csrf_token %}
+                                        <button class="btn btn-sm btn-outline-danger rounded-pill ms-1"
+                                                onclick="return confirm('Вы уверены, что хотите удалить этот курс?')">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Модальное окно редактирования названия курса -->
+                        <div class="modal fade" id="editCourseModal{{ course.id }}" tabindex="-1">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <form method="post" action="{% url 'edit_course' course.id %}"
+                                      enctype="multipart/form-data">
+                                    {% csrf_token %}
+                                    <div class="modal-content border-0 shadow-lg">
+                                        <div class="modal-header bg-light">
+                                            <h5 class="modal-title fw-bold">Редактировать курс</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="mb-3">
+                                                <label class="form-label">Название курса</label>
+                                                <input type="text" name="title" value="{{ course.title }}"
+                                                       class="form-control rounded-3" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Изображение курса</label>
+                                                <input type="file" name="image" class="form-control rounded-3">
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer border-0">
+                                            <button type="button" class="btn btn-outline-secondary rounded-pill"
+                                                    data-bs-dismiss="modal">Отмена
+                                            </button>
+                                            <button type="submit" class="btn btn-primary rounded-pill px-4">Сохранить
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <style>
+                .text-gradient-primary {
+                    background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+                    -webkit-background-clip: text;
+                    background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                }
+
+                .course-card {
+                    transition: all 0.3s ease;
+                    border: 1px solid #e9ecef;
+                }
+
+                .course-card:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+                    border-color: #dee2e6;
+                }
+
+                .course-avatar img {
+                    width: 60px;
+                    height: 60px;
+                    object-fit: cover;
+                    border: 2px solid #f8f9fa;
+                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+                }
+
+                .hover-shadow:hover {
+                    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.05);
+                }
+
+                .transition-all {
+                    transition: all 0.2s ease-in-out;
+                }
+            </style>
+
+            <!-- Модальное окно создания курса -->
+            <div class="modal fade" id="addCourseModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <form method="post" action="{% url 'add_course' %}" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Создать новый курс</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="mb-2">
+                                    <label for="id_title" class="form-label">Название курса</label>
+                                    <input type="text" name="title" class="form-control" id="id_title" required>
+                                </div>
+                                <div class="mb-2">
+                                    <label for="id_image" class="form-label">Обложка (необязательно)</label>
+                                    <input type="file" name="image" class="form-control" id="id_image">
+                                </div>
+                                <div class="mb-2">
+                                    <label for="id_description" class="form-label">Описание</label>
+                                    <textarea name="description" class="form-control" id="id_description"></textarea>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="submit" class="btn btn-success">Создать</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+
+            <!-- Колонка 2: Уроки курса -->
+            <div class="bg-white border rounded-4 p-4 shadow-sm">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h4 class="fw-bold text-gradient-primary">Уроки курса</h4>
+                    {% if selected_course %}
+                        <button class="btn btn-success rounded-pill px-3" data-bs-toggle="modal"
+                                data-bs-target="#addLessonModal">
+                            <i class="bi bi-plus-lg me-1"></i> Добавить урок
+                        </button>
+                    {% endif %}
+                </div>
+
+                {% if selected_course %}
+                    {% if lessons %}
+                        <div class="lessons-list">
+                            {% for lesson in lessons %}
+                                <div class="lesson-card p-3 mb-3 rounded-3 border hover-shadow transition-all">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="d-flex align-items-center">
+                                            <div class="lesson-order me-3 bg-light-primary rounded-3 text-center"
+                                                 style="width: 40px; height: 40px; line-height: 40px;">
+                                                <span class="fw-bold text-primary">{{ lesson.order }}</span>
+                                            </div>
+                                            <div>
+                                                <a href="{% url 'lesson_detail' selected_course.id lesson.id %}"
+                                                   class="text-decoration-none">
+                                                    <h6 class="mb-0 fw-bold text-dark">{{ lesson.title }}</h6>
+                                                </a>
+                                                <small class="text-muted">Последнее изменение:
+                                                    {{ lesson.updated_at|date:"d.m.Y" }}</small>
+                                            </div>
+                                        </div>
+
+                                        <div class="lesson-actions btn-group">
+                                            <button class="btn btn-sm btn-outline-secondary rounded-pill"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#editLessonModal{{ lesson.id }}">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+
+                                            <form method="post" action="{% url 'delete_lesson' lesson.id %}"
+                                                  style="display:inline">
+                                                {% csrf_token %}
+                                                <button class="btn btn-sm btn-outline-danger rounded-pill ms-1"
+                                                        onclick="return confirm('Вы уверены, что хотите удалить этот урок?')">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Модальное окно редактирования урока -->
+                                <div class="modal fade" id="editLessonModal{{ lesson.id }}" tabindex="-1">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                        <form method="post" action="{% url 'edit_lesson' lesson.id %}">
+                                            {% csrf_token %}
+                                            <div class="modal-content border-0 shadow-lg">
+                                                <div class="modal-header bg-light">
+                                                    <h5 class="modal-title fw-bold">Редактировать урок</h5>
+                                                    <button type="button" class="btn-close"
+                                                            data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Название урока</label>
+                                                        <input type="text" name="title" value="{{ lesson.title }}"
+                                                               class="form-control rounded-3" required>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Порядковый номер</label>
+                                                        <input type="number" name="order" value="{{ lesson.order }}"
+                                                               class="form-control rounded-3" min="0"
+                                                               placeholder="Порядок">
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer border-0">
+                                                    <button type="button" class="btn btn-outline-secondary rounded-pill"
+                                                            data-bs-dismiss="modal">Отмена
+                                                    </button>
+                                                    <button type="submit" class="btn btn-primary rounded-pill px-4">
+                                                        Сохранить
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="bi bi-journal-text display-5 text-muted mb-3"></i>
+                            <p class="text-muted">В этом курсе пока нет уроков</p>
+                            <button class="btn btn-primary rounded-pill px-4" data-bs-toggle="modal"
+                                    data-bs-target="#addLessonModal">
+                                <i class="bi bi-plus-lg me-1"></i> Добавить первый урок
+                            </button>
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-journal-album display-5 text-muted mb-3"></i>
+                        <p class="text-muted">Выберите курс для просмотра уроков</p>
+                    </div>
+                {% endif %}
+
+                <!-- Модальное окно добавления урока -->
+                {% if selected_course %}
+                    <div class="modal fade" id="addLessonModal" tabindex="-1">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <form method="post" action="{% url 'add_lesson' selected_course.id %}">
+                                {% csrf_token %}
+                                <div class="modal-content border-0 shadow-lg">
+                                    <div class="modal-header bg-light">
+                                        <h5 class="modal-title fw-bold">Добавить новый урок</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="mb-3">
+                                            <label class="form-label">Название урока</label>
+                                            <input type="text" name="title" class="form-control rounded-3"
+                                                   placeholder="Введите название урока" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Порядковый номер</label>
+                                            <input type="number" name="order" class="form-control rounded-3"
+                                                   placeholder="Укажите порядок" min="0">
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer border-0">
+                                        <button type="button" class="btn btn-outline-secondary rounded-pill"
+                                                data-bs-dismiss="modal">Отмена
+                                        </button>
+                                        <button type="submit" class="btn btn-success rounded-pill px-4">
+                                            <i class="bi bi-check-lg me-1"></i> Добавить урок
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+            <style>
+                .bg-light-primary {
+                    background-color: rgba(59, 130, 246, 0.1);
+                }
+
+                .lesson-card {
+                    transition: all 0.3s ease;
+                    border: 1px solid #e9ecef;
+                }
+
+                .lesson-card:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+                    border-color: #dee2e6;
+                }
+
+                .lesson-order {
+                    width: 40px;
+                    height: 40px;
+                    line-height: 40px;
+                    font-weight: bold;
+                    color: #3b82f6;
+                }
+            </style>
+
+            <!-- Колонка 3: Контент урока -->
+            <div class="bg-white border rounded-4 p-4 shadow-sm">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h4 class="fw-bold text-gradient-primary">Контент урока</h4>
+                    {% if selected_lesson %}
+                        <button class="btn btn-success rounded-pill px-3" data-bs-toggle="modal"
+                                data-bs-target="#addContentModal">
+                            <i class="bi bi-plus-lg me-1"></i> Добавить контент
+                        </button>
+                    {% endif %}
+                </div>
+
+                {% if selected_lesson %}
+                    {% if contents %}
+                        <div class="content-list">
+                            {% for content in contents %}
+                                <div class="content-card p-4 mb-4 rounded-3 border hover-shadow transition-all">
+                                    <!-- Заголовок типа контента -->
+                                    <div class="d-flex align-items-center mb-3">
+                            <span class="badge bg-light-primary text-primary me-2">
+                                {% if content.content_type == 'text' %}
+                                    <i class="bi bi-text-paragraph me-1"></i> Текст
+                                {% elif content.content_type == 'image' %}
+                                    <i class="bi bi-image me-1"></i> Изображение
+                                {% elif content.content_type == 'video' %}
+                                    <i class="bi bi-play-circle me-1"></i> Видео
+                                {% elif content.content_type == 'file' %}
+                                    <i class="bi bi-file-earmark me-1"></i> Файл
+                                {% endif %}
+                            </span>
+                                        <small class="text-muted">Порядок: {{ content.order }}</small>
+                                    </div>
+
+                                    <!-- Отображение контента -->
+                                    <div class="content-display mb-3">
+                                        {% if content.content_type == 'text' %}
+                                            <div class="p-3 bg-light rounded-3">
+                                                {{ content.content_data|linebreaks }}
+                                            </div>
+                                        {% elif content.content_type == 'image' %}
+                                            <img src="{{ content.content_data }}" alt="Изображение"
+                                                 class="img-fluid rounded-3 shadow-sm">
+                                        {% elif content.content_type == 'video' %}
+                                            <div class="ratio ratio-16x9 rounded-3 overflow-hidden shadow-sm">
+                                                <iframe src="{{ content.content_data|youtube_embed_url }}"
+                                                        allowfullscreen></iframe>
+                                            </div>
+                                        {% elif content.content_type == 'file' %}
+                                            <a href="{{ content.content_data }}" class="btn btn-outline-primary"
+                                               target="_blank">
+                                                <i class="bi bi-download me-1"></i> Скачать файл
+                                            </a>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- Кнопки управления -->
+                                    <div class="d-flex justify-content-end">
+                                        <button class="btn btn-sm btn-outline-secondary rounded-pill me-2"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#editContentModal{{ content.id }}">
+                                            <i class="bi bi-pencil me-1"></i> Редактировать
+                                        </button>
+
+                                        <form method="post" action="{% url 'delete_content' content.id %}"
+                                              class="d-inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill"
+                                                    onclick="return confirm('Вы уверены, что хотите удалить этот контент?')">
+                                                <i class="bi bi-trash me-1"></i> Удалить
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+
+                                <!-- Модальное окно редактирования -->
+                                <div class="modal fade" id="editContentModal{{ content.id }}" tabindex="-1">
+                                    <div class="modal-dialog modal-dialog-centered modal-lg">
+                                        <form method="post" action="{% url 'edit_content' content.id %}"
+                                              enctype="multipart/form-data">
+                                            {% csrf_token %}
+                                            <div class="modal-content border-0 shadow-lg">
+                                                <div class="modal-header bg-light">
+                                                    <h5 class="modal-title fw-bold">Редактировать контент</h5>
+                                                    <button type="button" class="btn-close"
+                                                            data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Тип контента</label>
+                                                        <select name="content_type" class="form-select rounded-3"
+                                                                required>
+                                                            <option value="text"
+                                                                    {% if content.content_type == 'text' %}selected{% endif %}>
+                                                                Текст
+                                                            </option>
+                                                            <option value="image"
+                                                                    {% if content.content_type == 'image' %}selected{% endif %}>
+                                                                Изображение
+                                                            </option>
+                                                            <option value="video"
+                                                                    {% if content.content_type == 'video' %}selected{% endif %}>
+                                                                Видео (YouTube)
+                                                            </option>
+                                                            <option value="file"
+                                                                    {% if content.content_type == 'file' %}selected{% endif %}>
+                                                                Файл
+                                                            </option>
+                                                        </select>
+                                                    </div>
+
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Содержимое</label>
+                                                        {% if content.content_type == 'text' %}
+                                                            <textarea name="content_data" class="form-control rounded-3"
+                                                                      rows="5"
+                                                                      required>{{ content.content_data }}</textarea>
+                                                        {% else %}
+                                                            <input type="text" name="content_data"
+                                                                   value="{{ content.content_data }}"
+                                                                   class="form-control rounded-3" required>
+                                                        {% endif %}
+                                                    </div>
+
+                                                    {% if content.content_type == 'image' %}
+                                                        <div class="mb-3">
+                                                            <label class="form-label">Или загрузите новое
+                                                                изображение</label>
+                                                            <input type="file" name="image"
+                                                                   class="form-control rounded-3">
+                                                        </div>
+                                                    {% endif %}
+
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Порядковый номер</label>
+                                                        <input type="number" name="order" value="{{ content.order }}"
+                                                               class="form-control rounded-3" min="0">
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer border-0">
+                                                    <button type="button" class="btn btn-outline-secondary rounded-pill"
+                                                            data-bs-dismiss="modal">Отмена
+                                                    </button>
+                                                    <button type="submit" class="btn btn-primary rounded-pill px-4">
+                                                        <i class="bi bi-check-lg me-1"></i> Сохранить
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="bi bi-file-earmark-text display-5 text-muted mb-3"></i>
+                            <p class="text-muted">В этом уроке пока нет контента</p>
+                            <button class="btn btn-primary rounded-pill px-4" data-bs-toggle="modal"
+                                    data-bs-target="#addContentModal">
+                                <i class="bi bi-plus-lg me-1"></i> Добавить контент
+                            </button>
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-journal-text display-5 text-muted mb-3"></i>
+                        <p class="text-muted">Выберите урок для просмотра контента</p>
+                    </div>
+                {% endif %}
+
+                <!-- Модальное окно добавления контента -->
+                {% if selected_lesson %}
+                    <div class="modal fade" id="addContentModal" tabindex="-1">
+                        <div class="modal-dialog modal-dialog-centered modal-lg">
+                            <form method="post" action="{% url 'add_content' selected_lesson.id %}"
+                                  enctype="multipart/form-data">
+                                {% csrf_token %}
+                                <div class="modal-content border-0 shadow-lg">
+                                    <div class="modal-header bg-light">
+                                        <h5 class="modal-title fw-bold">Добавить новый контент</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="mb-3">
+                                            <label class="form-label">Тип контента</label>
+                                            <select name="content_type" class="form-select rounded-3" required>
+                                                <option value="text">Текст</option>
+                                                <option value="image">Изображение</option>
+                                                <option value="video">Видео (YouTube)</option>
+                                                <option value="file">Файл</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label">Содержимое</label>
+                                            <textarea name="content_data" class="form-control rounded-3" rows="5"
+                                                      placeholder="Введите текст, ссылку на видео/файл или URL изображения"
+                                                      required></textarea>
+                                        </div>
+
+                                        <div class="mb-3" id="imageUploadField" style="display:none;">
+                                            <label class="form-label">Или загрузите изображение</label>
+                                            <input type="file" name="image" class="form-control rounded-3">
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label">Порядковый номер</label>
+                                            <input type="number" name="order" class="form-control rounded-3"
+                                                   placeholder="Укажите порядок отображения" min="0">
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer border-0">
+                                        <button type="button" class="btn btn-outline-secondary rounded-pill"
+                                                data-bs-dismiss="modal">Отмена
+                                        </button>
+                                        <button type="submit" class="btn btn-success rounded-pill px-4">
+                                            <i class="bi bi-check-lg me-1"></i> Добавить
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+            <style>
+                .content-card {
+                    transition: all 0.3s ease;
+                    border: 1px solid #e9ecef;
+                }
+
+                .content-card:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+                    border-color: #dee2e6;
+                }
+
+                .bg-light-primary {
+                    background-color: rgba(59, 130, 246, 0.1);
+                }
+
+                /* Стили для встроенного видео */
+                .ratio iframe {
+                    border: none;
+                }
+            </style>
+
+            <script>
+                // Показываем/скрываем поле загрузки изображения в зависимости от выбранного типа
+                document.querySelector('select[name="content_type"]').addEventListener('change', function () {
+                    const imageUploadField = document.getElementById('imageUploadField');
+                    imageUploadField.style.display = this.value === 'image' ? 'block' : 'none';
+                });
+            </script>
+        </div>
+
+
+
+
+
+{% endblock %}

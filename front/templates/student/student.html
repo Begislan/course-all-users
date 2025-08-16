@@ -1,0 +1,218 @@
+{% extends "front/base.html" %}
+{% block title %}{{ user.username }}{% endblock %}
+{% block content %}
+
+    <style>
+        .courses-hero {
+            background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)),
+            url('https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1471&q=80');
+            background-size: cover;
+            background-position: center;
+            color: white;
+            padding: 5rem 0;
+            margin-bottom: 3rem;
+        }
+
+        .course-card {
+            transition: all 0.3s ease;
+            border: none;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+            height: 350px; /* Фиксированная высота */
+            position: relative;
+            color: white;
+        }
+
+        .course-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.7) 100%);
+            z-index: 1;
+        }
+
+        .course-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .course-bg-img {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 0;
+        }
+
+        .course-content {
+            position: relative;
+            z-index: 2;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem;
+        }
+
+        .card-body {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+
+        .author-badge {
+            background-color: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(5px);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+
+        .card-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .card-text {
+            margin-bottom: 1rem;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+        }
+
+        .card-footer {
+            background: transparent !important;
+            border-top: 1px solid rgba(255, 255, 255, 0.2) !important;
+        }
+
+        .btn-outline-light:hover {
+            color: #333 !important;
+        }
+
+        .courses-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .courses-header h1 {
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .courses-header p {
+            color: #6c757d;
+            font-size: 1.2rem;
+        }
+
+        header .dropdown-toggle::after {
+            display: none; /* убираем стандартную стрелку у dropdown */
+        }
+
+        header .dropdown-menu {
+            border-radius: 0.75rem;
+            padding: 0.5rem 0;
+        }
+
+        header a.btn {
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        header a.btn:hover {
+            transform: translateY(-2px);
+        }
+
+    </style>
+    <header class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm py-3">
+        <div class="container-fluid d-flex justify-content-between align-items-center">
+            <!-- Дропдаун пользователя -->
+            <div class="dropdown">
+                <a href="#"
+                   class="d-flex align-items-center text-white text-decoration-none dropdown-toggle"
+                   data-bs-toggle="dropdown" aria-expanded="false" aria-label="Меню пользователя">
+                    {% if user.photo %}
+                        <img src="{{ user.photo.url }}" class="bi me-2" width="32" height="32" aria-hidden="true">
+
+                    {% endif %}
+                        <span class="fw-bold">{{ user.username }}</span>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end shadow rounded-3">
+                    <li>
+                        <a class="dropdown-item d-flex align-items-center" href="{% url 'logout' %}">
+                            <i class="bi bi-box-arrow-right me-2"></i> Выход
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Ссылка на главную -->
+            <div>
+                <a href="/" class="btn btn-light btn-sm rounded-pill px-3 fw-semibold shadow-sm">
+                    На главную
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Герой-секция с фоновым изображением -->
+    <div class="courses-hero text-center">
+        <div class="container">
+            <h1 class="display-4 fw-bold mb-4">Наши курсы</h1>
+            <p class="lead mb-0">Откройте для себя новые знания и возможности</p>
+        </div>
+    </div>
+
+    <div class="container py-5">
+        <!-- Заголовок -->
+        <div class="courses-header">
+            <h1>Наши образовательные курсы</h1>
+            <p>Откройте для себя новые возможности для обучения</p>
+        </div>
+
+        <!-- Список курсов -->
+        <div class="row">
+            {% for cour in course %}
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="course-card">
+                        <!-- Фоновое изображение -->
+                        {% if cour.image %}
+                            <img src="{{ cour.image.url }}" class="course-bg-img" alt="{{ cour.title }}">
+                        {% else %}
+                            <img src="https://images.unsplash.com/photo-1546410531-bb4caa6b424d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1471&q=80"
+                                 class="course-bg-img" alt="Default course image">
+                        {% endif %}
+
+                        <!-- Контент поверх изображения -->
+                        <div class="course-content">
+                            <div class="card-body">
+                        <span class="author-badge">
+                            <i class="bi bi-person-fill"></i> {{ cour.author }}
+                        </span>
+                                <h3 class="card-title">{{ cour.title }}</h3>
+                                <p class="card-text">{{ cour.description|truncatechars:120 }}</p>
+                            </div>
+
+                            <div class="card-footer">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-white-50">
+                                        <i class="bi bi-calendar"></i> {{ cour.created_at|date:"d.m.Y" }}
+                                    </small>
+                                    <a href="{% url 'course_view' cour.id %}"
+                                       class="btn btn-sm btn-outline-light rounded-pill">
+                                        Подробнее <i class="bi bi-arrow-right"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+{% endblock %}

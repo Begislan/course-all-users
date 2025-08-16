@@ -1,0 +1,342 @@
+{% extends "front/base.html" %}
+
+{% load embed_filters %}
+
+{% block title %}{{ user.username }}{% endblock %}
+{% block content %}
+
+    <header class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm py-3">
+        <div class="container-fluid d-flex justify-content-between align-items-center">
+            <!-- Дропдаун пользователя -->
+            <div class="dropdown">
+                <a href="#"
+                   class="d-flex align-items-center text-white text-decoration-none dropdown-toggle"
+                   data-bs-toggle="dropdown" aria-expanded="false" aria-label="Меню пользователя">
+                    <svg class="bi me-2" width="32" height="32" aria-hidden="true">
+                        <use xlink:href="#bootstrap"></use>
+                    </svg>
+                    <span class="fw-bold">{{ user.username }}</span>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end shadow rounded-3">
+                    <li>
+                        <a class="dropdown-item d-flex align-items-center" href="{% url 'logout' %}">
+                            <i class="bi bi-box-arrow-right me-2"></i> Выход
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Навигация -->
+            <nav class="d-flex align-items-center gap-3">
+                <a href="/" class="btn btn-light btn-sm rounded-pill px-3 fw-semibold shadow-sm">
+                    На главную
+                </a>
+                <a href="{% url 'student' %}"
+                   class="btn btn-outline-light btn-sm rounded-pill px-3 fw-semibold shadow-sm">
+                    Курсы
+                </a>
+            </nav>
+        </div>
+    </header>
+
+
+    <style>
+        header .dropdown-toggle::after {
+            display: none; /* убираем стандартную стрелку у dropdown */
+        }
+
+        header .dropdown-menu {
+            border-radius: 0.75rem;
+            padding: 0.5rem 0;
+        }
+
+        header a.btn {
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        header a.btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .lessons-sidebar {
+            background: white;
+            border-right: 1px solid #f0f0f0;
+            height: 100%;
+        }
+
+        .lessons-header {
+            background: #fafafa;
+        }
+
+        .lesson-item {
+            transition: all 0.2s ease;
+        }
+
+        .lesson-item:hover {
+            background-color: #f9f9f9;
+        }
+
+        .active-lesson {
+            background-color: #f5f8ff;
+            border-left: 3px solid #3b82f6;
+        }
+
+        .active-lesson .lesson-title {
+            color: #1a1a1a !important;
+        }
+
+        .lesson-icon {
+            width: 24px;
+            height: 24px;
+        }
+
+        .lesson-meta {
+            font-size: 0.75rem;
+            display: block;
+            margin-top: 2px;
+        }
+
+        .lesson-title {
+            transition: color 0.2s ease;
+        }
+
+        .content-area {
+            padding: 2rem;
+            background-color: white;
+        }
+
+        .content-header {
+            padding-bottom: 1.5rem;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .content-block {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .content-text {
+            line-height: 1.7;
+            font-size: 1.1rem;
+        }
+
+        .content-image {
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            max-height: 500px;
+            width: 100%;
+            object-fit: contain;
+            background-color: #f1f3f5;
+        }
+
+        .video-container {
+            position: relative;
+            padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+            height: 0;
+            overflow: hidden;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            background-color: #000;
+        }
+
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .file-download {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.75rem 1.5rem;
+            background-color: #3b82f6;
+            color: white;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #6c757d;
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: #dee2e6;
+        }
+
+        /* Исправление для YouTube ссылок */
+        .youtube-embed {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+        }
+    </style>
+
+    <div class="container-fluid my-4">
+        <div class="row lesson-container">
+            <!-- Боковая панель с уроками -->
+            <div class="col-md-3 lessons-sidebar p-0">
+                <div class="lessons-header position-relative overflow-hidden rounded-bottom" style="height: 180px;">
+                    <!-- Фоновое изображение -->
+                    {% if course.image %}
+                        <img src="{{ course.image.url }}"
+                             class="w-100 h-100 object-fit-cover"
+                             alt="{{ course.title }}"
+                             style="filter: brightness(0.7);">
+                    {% else %}
+                        <div class="w-100 h-100 bg-secondary"></div>
+                    {% endif %}
+
+                    <!-- Текст поверх изображения -->
+                    <div class="position-absolute bottom-0 start-0 p-4 w-100 text-white">
+                        <h5 class="mb-1 fw-bold">{{ course.title }}</h5>
+                        <small class="d-flex align-items-center">
+                            <i class="bi bi-list-ol me-1"></i>
+                            {{ lessons|length }} уроков
+                        </small>
+                    </div>
+
+                    <!-- Градиент для лучшей читаемости -->
+                    <div class="position-absolute bottom-0 start-0 w-100 h-50"
+                         style="background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%);"></div>
+                </div>
+
+                <style>
+                    .object-fit-cover {
+                        object-fit: cover;
+                    }
+
+                    .lessons-header {
+                        transition: all 0.3s ease;
+                    }
+
+                    .lessons-header:hover {
+                        transform: translateY(-2px);
+                        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+                    }
+                </style>
+
+                <ul class="lesson-list list-unstyled m-0">
+                    {% for lesson in lessons %}
+                        <li class="lesson-item border-bottom {% if selected_lesson and lesson.id == selected_lesson.id %}active-lesson{% endif %}">
+                            <a href="{% url 'course_lesson' course.id lesson.id %}"
+                               class="lesson-link d-block p-3 text-decoration-none">
+                                <div class="d-flex align-items-center">
+                                    <div class="lesson-icon me-3 d-flex align-items-center justify-content-center">
+                                        <i class="bi bi-file-text {% if selected_lesson and lesson.id == selected_lesson.id %}text-primary{% else %}text-muted{% endif %}"></i>
+                                    </div>
+                                    <div>
+                                        <div class="lesson-title {% if selected_lesson and lesson.id == selected_lesson.id %}fw-semibold text-dark{% else %}text-muted{% endif %}">
+                                            {{ lesson.title }}
+                                        </div>
+                                        {#                                        <small class="lesson-meta text-muted">#}
+                                        {#                                            {{ lesson.duration }} мин#}
+                                        {#                                        </small>#}
+                                    </div>
+                                </div>
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <!-- Основная область контента -->
+            <div class="col-md-9 content-area">
+                {% if selected_lesson %}
+                    <div class="content-header">
+                        <h2 class="mb-2">{{ selected_lesson.title }}</h2>
+                        <small class="text-muted">Обновлено: {{ selected_lesson.created_at|date:"d.m.Y H:i" }}</small>
+                    </div>
+
+                    {% if contents %}
+                        {% for content in contents %}
+                            <div class="content-block">
+                                {% if content.content_type == 'text' %}
+                                    <div class="content-text">
+                                        {{ content.content_data|linebreaks }}
+                                    </div>
+
+                                {% elif content.content_type == 'image' %}
+                                    {% if content.image %}
+                                        <img src="{{ content.image.url }}" alt="Изображение"
+                                             class="content-image img-fluid mb-3">
+                                    {% elif content.content_data %}
+                                        <img src="{{ content.content_data }}" alt="Изображение"
+                                             class="content-image img-fluid mb-3"
+                                             onerror="this.src='https://via.placeholder.com/800x450?text=Image+Not+Found'">
+                                    {% else %}
+                                        <div class="alert alert-warning">Изображение недоступно</div>
+                                    {% endif %}
+
+                                {% elif content.content_type == 'video' %}
+                                    <div class="video-container mb-3">
+                                        {% if "youtube.com" in content.content_data or "youtu.be" in content.content_data %}
+                                            {% with embed_url=content.content_data|youtube_embed_url %}
+                                                {% if embed_url %}
+                                                    <iframe src="{{ embed_url }}"
+                                                            frameborder="0"
+                                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                            allowfullscreen></iframe>
+                                                {% else %}
+                                                    <div class="alert alert-danger">Некорректная ссылка на видео</div>
+                                                {% endif %}
+                                            {% endwith %}
+                                        {% else %}
+                                            <video controls class="youtube-embed">
+                                                <source src="{{ content.content_data }}" type="video/mp4">
+                                                Ваш браузер не поддерживает видео тег.
+                                            </video>
+                                        {% endif %}
+                                    </div>
+
+                                {% elif content.content_type == 'file' %}
+                                    <a href="{{ content.content_data }}" class="file-download" target="_blank">
+                                        <i class="bi bi-file-earmark-arrow-down me-2"></i>
+                                        Скачать файл
+                                    </a>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="bi bi-file-earmark-text empty-state-icon"></i>
+                            <h4>Контент урока пока не добавлен</h4>
+                            <p class="text-muted">Здесь будет отображаться учебный материал</p>
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <div class="empty-state">
+                        <i class="bi bi-journal-text empty-state-icon"></i>
+                        <h4>Выберите урок</h4>
+                        <p class="text-muted">Пожалуйста, выберите урок из списка слева</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Функция для обработки ошибок загрузки изображений
+        document.addEventListener('DOMContentLoaded', function () {
+            const images = document.querySelectorAll('.content-image');
+            images.forEach(img => {
+                img.onerror = function () {
+                    this.src = 'https://via.placeholder.com/800x450?text=Image+Not+Found';
+                    this.alt = 'Изображение не найдено';
+                };
+            });
+        });
+    </script>
+
+{% endblock %}

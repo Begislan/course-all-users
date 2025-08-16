@@ -1,0 +1,178 @@
+{% extends "front/base.html" %}
+{% block title %}{{ user.username }}{% endblock %}
+{% block content %}
+
+    <div class="video-background">
+        <video autoplay muted loop class="video-bg" playsinline>
+            <source src="https://videos.pexels.com/video-files/4328789/4328789-uhd_2560_1440_25fps.mp4"
+                    type="video/mp4">
+            Ваш браузер не поддерживает видеофон.
+        </video>
+        <div class="overlay"></div>
+    </div>
+
+    <div class="container my-5 main-container">
+
+
+        <div class="auth-container mx-auto bg-glass p-5 rounded-4 shadow-lg" style="max-width: 500px;">
+            <div class="text-center mb-4 text-white">
+                <i class="bi bi-person-plus display-1"></i>
+                <h2 class="fw-bold">Регистрация</h2>
+                <p class="text-light small">Заполните поля, чтобы создать аккаунт</p>
+            </div>
+
+            <form method="post" enctype="multipart/form-data" class="text-white">
+                {% csrf_token %}
+
+                <!-- Имя пользователя -->
+                <div class="mb-3 input-group-custom">
+                    <input type="text" name="username" maxlength="150" required
+                           placeholder="Имя пользователя" id="id_username" class="form-control">
+                    <small class="form-text text-light">Не более 150 символов. Буквы, цифры и @/./+/-/_.</small>
+                </div>
+
+                <!-- Email -->
+                <div class="mb-3 input-group-custom">
+                    <input type="email" name="email" maxlength="254" required
+                           placeholder="Email" id="id_email" class="form-control">
+                </div>
+
+                <!-- Телефон -->
+                <div class="mb-3 input-group-custom">
+                    <input type="text" name="phone" maxlength="255"
+                           placeholder="Телефон номер" id="id_phone" class="form-control">
+                </div>
+
+                <!-- Фото -->
+                <div class="mb-3 input-group-custom">
+                    <input type="file" name="photo" accept="image/*" id="id_photo" class="form-control">
+                </div>
+
+                <!-- Пароль -->
+                <div class="mb-3 input-group-custom">
+                    <input type="password" name="password1" required
+                           placeholder="Пароль" id="id_password1" class="form-control">
+                </div>
+
+                <!-- Подтверждение пароля -->
+                <div class="mb-3 input-group-custom">
+                    <input type="password" name="password2" required
+                           placeholder="Подтверждение пароля" id="id_password2" class="form-control">
+                    <small class="form-text text-light">Введите пароль ещё раз для подтверждения.</small>
+                </div>
+
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-success btn-lg rounded-pill py-3 shadow hover-glow">
+                        <i class="bi bi-person-check me-2"></i>Зарегистрироваться
+                    </button>
+                </div>
+            </form>
+        </div>
+
+
+    </div>
+
+    <style>
+        /* Видео фон */
+        .video-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .video-bg {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: brightness(0.5);
+        }
+
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        /* Основной контейнер */
+        .main-container {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 90vh;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        /* Стеклянные карточки */
+        .bg-glass {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* Эффекты и анимации */
+        .hover-glow:hover {
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+            transform: translateY(-3px);
+            transition: all 0.3s ease;
+        }
+
+        .welcome-card, .auth-container {
+            animation: fadeInUp 0.8s ease-in-out;
+            width: 100%;
+            max-width: 800px;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Адаптивность */
+        @media (max-width: 768px) {
+            .welcome-card h2 {
+                font-size: 1.5rem;
+            }
+
+            .btn-lg {
+                font-size: 1rem;
+                padding: 0.8rem 1.2rem;
+            }
+
+            .main-container {
+                padding: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .welcome-card {
+                padding: 1.5rem;
+            }
+
+            .display-6 {
+                font-size: 1.3rem;
+            }
+
+            .btn-lg {
+                width: 100%;
+            }
+        }
+    </style>
+
+{% endblock %}
