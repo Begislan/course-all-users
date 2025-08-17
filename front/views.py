@@ -246,3 +246,8 @@ def upload_users(request, user_id):
 
         return redirect('users')  # Замените на нужный URL
     return render(request, 'admin/upload_users.html', {'user': user})
+
+@user_passes_test(lambda u: u.is_superuser)
+def admin_courses(request):
+    courses = Course.objects.all()
+    return render(request, 'admin/courses.html', {'courses': courses})

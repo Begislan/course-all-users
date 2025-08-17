@@ -48,6 +48,19 @@
                     <input type="file" name="photo" accept="image/*" id="id_photo" class="form-control">
                 </div>
 
+                <script>
+                    const input = document.getElementById('id_photo');
+                    const MAX_SIZE_MB = 2; // Максимум 2 МБ
+
+                    input.addEventListener('change', () => {
+                        const file = input.files[0];
+                        if (file && file.size > MAX_SIZE_MB * 1024 * 1024) {
+                            alert(`Файл слишком большой. Максимальный размер: ${MAX_SIZE_MB} МБ`);
+                            input.value = ''; // Сбрасываем выбранный файл
+                        }
+                    });
+                </script>
+
                 <!-- Пароль -->
                 <div class="mb-3 input-group-custom">
                     <input type="password" name="password1" required

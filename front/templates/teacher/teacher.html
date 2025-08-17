@@ -33,13 +33,13 @@
                     {% endif %}
                     <span class="fw-bold">{{ user.username }}</span>
                 </a>
-                <ul class="dropdown-menu dropdown-menu-end shadow">
-                    <li>
-                        <a class="dropdown-item d-flex align-items-center" href="{% url 'logout' %}">
-                            <i class="bi bi-box-arrow-right me-2"></i> Выход
-                        </a>
-                    </li>
-                </ul>
+{#                <ul class="dropdown-menu dropdown-menu-end shadow">#}
+{#                    <li>#}
+{#                        <a class="dropdown-item d-flex align-items-center" href="{% url 'logout' %}">#}
+{#                            <i class="bi bi-box-arrow-right me-2"></i> Выход#}
+{#                        </a>#}
+{#                    </li>#}
+{#                </ul>#}
             </div>
 
             <!-- Ссылка на главную -->
@@ -571,9 +571,9 @@
                                             <label class="form-label">Тип контента</label>
                                             <select name="content_type" class="form-select rounded-3" required>
                                                 <option value="text">Текст</option>
-                                                <option value="image">Изображение</option>
+{#                                                <option value="image">Изображение</option>#}
                                                 <option value="video">Видео (YouTube)</option>
-                                                <option value="file">Файл</option>
+{#                                                <option value="file">Файл</option>#}
                                             </select>
                                         </div>
 

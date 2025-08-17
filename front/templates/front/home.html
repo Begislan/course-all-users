@@ -34,11 +34,16 @@
                 <i class="bi bi-rocket-takeoff me-2"></i>Приступить к работе
             </a>
         </div>
+        br
         {% if user.is_superuser %}
             <div class="text-center">
                 <a href="{% url 'users' %}"
                    class="btn btn-primary btn-lg rounded-pill px-4 py-3 fs-5 shadow-lg hover-glow">
-                    <i class="bi bi-file-earmark-person"></i>Пользователи
+                    <i class="bi bi-file-earmark-person"></i> Пользователи
+                </a>
+                <a href="{% url 'admin_courses' %}"
+                   class="btn btn-primary btn-lg rounded-pill px-4 py-3 fs-5 shadow-lg hover-glow">
+                    <i class="bi bi-bar-chart-steps"></i> Все курсы
                 </a>
             </div>
         {% endif %}

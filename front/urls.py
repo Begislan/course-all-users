@@ -34,5 +34,8 @@ urlpatterns = [
 
     #users
     path('users/', views.users, name='users'),
-    path('ipload_user/<int:user_id>/', views.upload_users, name='upload_users')
+    path('ipload_user/<int:user_id>/', views.upload_users, name='upload_users'),
+
+    #courses
+    path('admin_courses/', views.admin_courses, name='admin_courses'),
 ]
