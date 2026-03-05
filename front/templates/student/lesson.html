@@ -1,342 +1,251 @@
 {% extends "front/base.html" %}
-
 {% load embed_filters %}
 
-{% block title %}{{ user.username }}{% endblock %}
+{% block title %}{{ selected_lesson.title|default:user.username }}{% endblock %}
+
 {% block content %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-    <header class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm py-3">
-        <div class="container-fluid d-flex justify-content-between align-items-center">
-            <!-- Дропдаун пользователя -->
-            <div class="dropdown">
-                <a href="#"
-                   class="d-flex align-items-center text-white text-decoration-none dropdown-toggle"
-                   data-bs-toggle="dropdown" aria-expanded="false" aria-label="Меню пользователя">
-                    <svg class="bi me-2" width="32" height="32" aria-hidden="true">
-                        <use xlink:href="#bootstrap"></use>
-                    </svg>
-                    <span class="fw-bold">{{ user.username }}</span>
-                </a>
-                <ul class="dropdown-menu dropdown-menu-end shadow rounded-3">
-                    <li>
-                        <a class="dropdown-item d-flex align-items-center" href="{% url 'logout' %}">
-                            <i class="bi bi-box-arrow-right me-2"></i> Выход
-                        </a>
-                    </li>
-                </ul>
+    :root {
+        --bg-body: #f8fafc;
+        --bg-card: #ffffff;
+        --bg-sidebar: #ffffff;
+        --border-color: #e2e8f0;
+        --text-dark: #0f172a;
+        --text-gray: #64748b;
+        --accent: #1e293b;
+        --success: #10b981;
+        --step-bg: #f1f5f9;
+        --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+        --h-bg: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-theme {
+        --bg-body: #020617;
+        --bg-card: #0f172a;
+        --bg-sidebar: #0f172a;
+        --border-color: #1e293b;
+        --text-dark: #f1f5f9;
+        --text-gray: #94a3b8;
+        --accent: #38bdf8;
+        --step-bg: #1e293b;
+        --h-bg: rgba(15, 23, 42, 0.95);
+    }
+
+    body {
+        background-color: var(--bg-body);
+        color: var(--text-dark);
+        font-family: 'Inter', sans-serif;
+        transition: all 0.3s ease;
+    }
+
+    /* --- Header & Progress --- */
+    .dynamic-header {
+        position: sticky; top: 0; z-index: 1000;
+        background: var(--h-bg); backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--border-color);
+    }
+    .header-container { width: 95%; max-width: 1600px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; height: 70px; }
+    
+    .header-progress-track { position: absolute; bottom: 0; left: 0; width: 100%; height: 3px; background: rgba(0,0,0,0.05); }
+    .header-progress-fill { height: 100%; background: var(--success); transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+
+    /* --- Sidebar & Layout --- */
+    .lesson-container-fluid {
+        width: 95%; max-width: 1600px; margin: 20px auto;
+        display: flex; min-height: 85vh;
+        background: var(--bg-card); border: 1px solid var(--border-color);
+        border-radius: 20px; overflow: hidden;
+    }
+
+    .lessons-sidebar { width: 300px; background: var(--bg-sidebar); border-right: 1px solid var(--border-color); padding: 30px 15px; }
+    
+    .lesson-link {
+        display: block; padding: 12px 15px; text-decoration: none; color: var(--text-gray);
+        border-radius: 12px; margin-bottom: 5px; transition: 0.2s; font-size: 0.9rem;
+    }
+    .lesson-link:hover { background: var(--step-bg); color: var(--text-dark); }
+    .active-lesson .lesson-link { background: var(--success); color: white !important; font-weight: 600; }
+
+    /* --- Content Area --- */
+    .content-area { flex: 1; padding: 40px 5%; overflow-y: auto; }
+    
+    .step-btn {
+        width: 45px; height: 45px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+        background: var(--step-bg); color: var(--text-gray); text-decoration: none; transition: 0.3s;
+    }
+    .step-btn.active { background: var(--success); color: white; transform: scale(1.1); }
+
+    .media-container { border-radius: 20px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.1); margin: 30px 0; border: 1px solid var(--border-color); }
+
+    /* --- Buttons --- */
+    .lesson-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 50px; padding-top: 30px; border-top: 1px solid var(--border-color); }
+    .btn-nav { padding: 12px 25px; border-radius: 12px; text-decoration: none; font-weight: 600; transition: 0.3s; display: inline-flex; align-items: center; gap: 8px; }
+    .btn-prev { background: var(--step-bg); color: var(--text-dark); }
+    .btn-next { background: var(--success); color: white; }
+    .btn-next:hover { opacity: 0.9; transform: translateX(5px); }
+
+    /* --- Comments --- */
+    .comment-item { border-bottom: 1px solid var(--border-color); padding: 20px 0; }
+    .logo-icon { background: var(--success); color: white; display: flex; align-items: center; justify-content: center; border-radius: 10px; font-weight: bold; }
+</style>
+
+<header class="dynamic-header">
+    <div class="header-container">
+        <a href="/" class="brand-logo text-decoration-none d-flex align-items-center gap-2">
+            <div class="logo-icon" style="width: 35px; height: 35px;">B</div>
+            <div class="logo-text text-dark fw-bold">Bilim<span>Platform</span></div>
+        </a>
+
+        <div class="d-flex align-items-center gap-3">
+            <button id="theme-toggle" class="theme-btn border-0 bg-transparent fs-4" style="color: var(--text-dark);">
+                <i class="bi bi-moon-stars-fill" id="theme-icon"></i>
+            </button>
+            
+            <div class="user-info d-none d-md-block text-end">
+                <div class="fw-bold small">{{ user.username }}</div>
+                <div class="text-success fw-bold" style="font-size: 11px;">{{ progress_percent }}% Прогресс</div>
             </div>
 
-            <!-- Навигация -->
-            <nav class="d-flex align-items-center gap-3">
-                <a href="/" class="btn btn-light btn-sm rounded-pill px-3 fw-semibold shadow-sm">
-                    На главную
-                </a>
-                <a href="{% url 'student' %}"
-                   class="btn btn-outline-light btn-sm rounded-pill px-3 fw-semibold shadow-sm">
-                    Курсы
-                </a>
-            </nav>
-        </div>
-    </header>
-
-
-    <style>
-        header .dropdown-toggle::after {
-            display: none; /* убираем стандартную стрелку у dropdown */
-        }
-
-        header .dropdown-menu {
-            border-radius: 0.75rem;
-            padding: 0.5rem 0;
-        }
-
-        header a.btn {
-            transition: background-color 0.3s ease, transform 0.2s ease;
-        }
-
-        header a.btn:hover {
-            transform: translateY(-2px);
-        }
-
-        .lessons-sidebar {
-            background: white;
-            border-right: 1px solid #f0f0f0;
-            height: 100%;
-        }
-
-        .lessons-header {
-            background: #fafafa;
-        }
-
-        .lesson-item {
-            transition: all 0.2s ease;
-        }
-
-        .lesson-item:hover {
-            background-color: #f9f9f9;
-        }
-
-        .active-lesson {
-            background-color: #f5f8ff;
-            border-left: 3px solid #3b82f6;
-        }
-
-        .active-lesson .lesson-title {
-            color: #1a1a1a !important;
-        }
-
-        .lesson-icon {
-            width: 24px;
-            height: 24px;
-        }
-
-        .lesson-meta {
-            font-size: 0.75rem;
-            display: block;
-            margin-top: 2px;
-        }
-
-        .lesson-title {
-            transition: color 0.2s ease;
-        }
-
-        .content-area {
-            padding: 2rem;
-            background-color: white;
-        }
-
-        .content-header {
-            padding-bottom: 1.5rem;
-            margin-bottom: 2rem;
-            border-bottom: 1px solid #e9ecef;
-        }
-
-        .content-block {
-            margin-bottom: 2rem;
-            padding: 1.5rem;
-            background-color: #f8f9fa;
-            border-radius: 10px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-        }
-
-        .content-text {
-            line-height: 1.7;
-            font-size: 1.1rem;
-        }
-
-        .content-image {
-            border-radius: 8px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-            max-height: 500px;
-            width: 100%;
-            object-fit: contain;
-            background-color: #f1f3f5;
-        }
-
-        .video-container {
-            position: relative;
-            padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
-            height: 0;
-            overflow: hidden;
-            border-radius: 8px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-            background-color: #000;
-        }
-
-        .video-container iframe {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
-
-        .file-download {
-            display: inline-flex;
-            align-items: center;
-            padding: 0.75rem 1.5rem;
-            background-color: #3b82f6;
-            color: white;
-            border-radius: 50px;
-            text-decoration: none;
-            font-weight: 500;
-            transition: all 0.2s ease;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 3rem;
-            color: #6c757d;
-        }
-
-        .empty-state-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            color: #dee2e6;
-        }
-
-        /* Исправление для YouTube ссылок */
-        .youtube-embed {
-            width: 100%;
-            aspect-ratio: 16 / 9;
-        }
-    </style>
-
-    <div class="container-fluid my-4">
-        <div class="row lesson-container">
-            <!-- Боковая панель с уроками -->
-            <div class="col-md-3 lessons-sidebar p-0">
-                <div class="lessons-header position-relative overflow-hidden rounded-bottom" style="height: 180px;">
-                    <!-- Фоновое изображение -->
-                    {% if course.image %}
-                        <img src="{{ course.image.url }}"
-                             class="w-100 h-100 object-fit-cover"
-                             alt="{{ course.title }}"
-                             style="filter: brightness(0.7);">
-                    {% else %}
-                        <div class="w-100 h-100 bg-secondary"></div>
-                    {% endif %}
-
-                    <!-- Текст поверх изображения -->
-                    <div class="position-absolute bottom-0 start-0 p-4 w-100 text-white">
-                        <h5 class="mb-1 fw-bold">{{ course.title }}</h5>
-                        <small class="d-flex align-items-center">
-                            <i class="bi bi-list-ol me-1"></i>
-                            {{ lessons|length }} уроков
-                        </small>
-                    </div>
-
-                    <!-- Градиент для лучшей читаемости -->
-                    <div class="position-absolute bottom-0 start-0 w-100 h-50"
-                         style="background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%);"></div>
-                </div>
-
-                <style>
-                    .object-fit-cover {
-                        object-fit: cover;
-                    }
-
-                    .lessons-header {
-                        transition: all 0.3s ease;
-                    }
-
-                    .lessons-header:hover {
-                        transform: translateY(-2px);
-                        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-                    }
-                </style>
-
-                <ul class="lesson-list list-unstyled m-0">
-                    {% for lesson in lessons %}
-                        <li class="lesson-item border-bottom {% if selected_lesson and lesson.id == selected_lesson.id %}active-lesson{% endif %}">
-                            <a href="{% url 'course_lesson' course.id lesson.id %}"
-                               class="lesson-link d-block p-3 text-decoration-none">
-                                <div class="d-flex align-items-center">
-                                    <div class="lesson-icon me-3 d-flex align-items-center justify-content-center">
-                                        <i class="bi bi-file-text {% if selected_lesson and lesson.id == selected_lesson.id %}text-primary{% else %}text-muted{% endif %}"></i>
-                                    </div>
-                                    <div>
-                                        <div class="lesson-title {% if selected_lesson and lesson.id == selected_lesson.id %}fw-semibold text-dark{% else %}text-muted{% endif %}">
-                                            {{ lesson.title }}
-                                        </div>
-                                        {#                                        <small class="lesson-meta text-muted">#}
-                                        {#                                            {{ lesson.duration }} мин#}
-                                        {#                                        </small>#}
-                                    </div>
-                                </div>
-                            </a>
-                        </li>
-                    {% endfor %}
-                </ul>
-            </div>
-
-            <!-- Основная область контента -->
-            <div class="col-md-9 content-area">
-                {% if selected_lesson %}
-                    <div class="content-header">
-                        <h2 class="mb-2">{{ selected_lesson.title }}</h2>
-                        <small class="text-muted">Обновлено: {{ selected_lesson.created_at|date:"d.m.Y H:i" }}</small>
-                    </div>
-
-                    {% if contents %}
-                        {% for content in contents %}
-                            <div class="content-block">
-                                {% if content.content_type == 'text' %}
-                                    <div class="content-text">
-                                        {{ content.content_data|linebreaks }}
-                                    </div>
-
-                                {% elif content.content_type == 'image' %}
-                                    {% if content.image %}
-                                        <img src="{{ content.image.url }}" alt="Изображение"
-                                             class="content-image img-fluid mb-3">
-                                    {% elif content.content_data %}
-                                        <img src="{{ content.content_data }}" alt="Изображение"
-                                             class="content-image img-fluid mb-3"
-                                             onerror="this.src='https://via.placeholder.com/800x450?text=Image+Not+Found'">
-                                    {% else %}
-                                        <div class="alert alert-warning">Изображение недоступно</div>
-                                    {% endif %}
-
-                                {% elif content.content_type == 'video' %}
-                                    <div class="video-container mb-3">
-                                        {% if "youtube.com" in content.content_data or "youtu.be" in content.content_data %}
-                                            {% with embed_url=content.content_data|youtube_embed_url %}
-                                                {% if embed_url %}
-                                                    <iframe src="{{ embed_url }}"
-                                                            frameborder="0"
-                                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                                            allowfullscreen></iframe>
-                                                {% else %}
-                                                    <div class="alert alert-danger">Некорректная ссылка на видео</div>
-                                                {% endif %}
-                                            {% endwith %}
-                                        {% else %}
-                                            <video controls class="youtube-embed">
-                                                <source src="{{ content.content_data }}" type="video/mp4">
-                                                Ваш браузер не поддерживает видео тег.
-                                            </video>
-                                        {% endif %}
-                                    </div>
-
-                                {% elif content.content_type == 'file' %}
-                                    <a href="{{ content.content_data }}" class="file-download" target="_blank">
-                                        <i class="bi bi-file-earmark-arrow-down me-2"></i>
-                                        Скачать файл
-                                    </a>
-                                {% endif %}
-                            </div>
-                        {% endfor %}
-                    {% else %}
-                        <div class="empty-state">
-                            <i class="bi bi-file-earmark-text empty-state-icon"></i>
-                            <h4>Контент урока пока не добавлен</h4>
-                            <p class="text-muted">Здесь будет отображаться учебный материал</p>
-                        </div>
-                    {% endif %}
-                {% else %}
-                    <div class="empty-state">
-                        <i class="bi bi-journal-text empty-state-icon"></i>
-                        <h4>Выберите урок</h4>
-                        <p class="text-muted">Пожалуйста, выберите урок из списка слева</p>
-                    </div>
-                {% endif %}
-            </div>
+            {% if user.photo %}
+                <img src="{{ user.photo.url }}" class="header-avatar" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--success);">
+            {% else %}
+                <div class="header-avatar logo-icon" style="width: 40px; height: 40px; font-size: 14px; border-radius: 50%;">{{ user.username|first|upper }}</div>
+            {% endif %}
         </div>
     </div>
+    <div class="header-progress-track">
+        <div class="header-progress-fill" style="width: {{ progress_percent }}%;"></div>
+    </div>
+</header>
 
-    <script>
-        // Функция для обработки ошибок загрузки изображений
-        document.addEventListener('DOMContentLoaded', function () {
-            const images = document.querySelectorAll('.content-image');
-            images.forEach(img => {
-                img.onerror = function () {
-                    this.src = 'https://via.placeholder.com/800x450?text=Image+Not+Found';
-                    this.alt = 'Изображение не найдено';
-                };
-            });
-        });
-    </script>
+<div class="lesson-container-fluid">
+    <aside class="lessons-sidebar">
+        <span class="sidebar-label text-uppercase fw-bold opacity-50 small">Курстун мазмуну</span>
+        <div class="mt-3">
+            {% for lesson in lessons %}
+                <div class="{% if lesson.id == selected_lesson.id %}active-lesson{% endif %}">
+                    <a href="{% url 'course_lesson' course.id lesson.id %}" class="lesson-link">
+                        {{ forloop.counter }}. {{ lesson.title }}
+                    </a>
+                </div>
+            {% endfor %}
+        </div>
+    </aside>
 
+    <main class="content-area">
+        <div class="content-max-width">
+            {% if selected_lesson %}
+                <div class="steps-nav d-flex justify-content-center gap-3 mb-5">
+                    {% for content in contents %}
+                        <a href="?step={{ forloop.counter0 }}" 
+                           class="step-btn {% if forloop.counter0 == step_index %}active{% endif %}"
+                           title="{{ content.content_type|title }}">
+                            {% if content.content_type == 'video' %}
+                                <i class="bi bi-play-btn-fill"></i>
+                            {% elif content.content_type == 'text' %}
+                                <i class="bi bi-text-paragraph"></i>
+                            {% elif content.content_type == 'image' %}
+                                <i class="bi bi-image"></i>
+                            {% else %}
+                                <i class="bi bi-box"></i>
+                            {% endif %}
+                        </a>
+                    {% endfor %}
+                </div>
+
+                <h1 class="mb-4 fw-bold h2">{{ selected_lesson.title }}</h1>
+
+                <div class="lesson-body">
+                    {% if current_content %}
+                        <div class="content-block">
+                            {% if current_content.content_type == 'text' %}
+                                <div class="content-text fs-5" style="white-space: pre-wrap; line-height: 1.8; color: var(--text-dark);">{{ current_content.content_data }}</div>
+                            {% elif current_content.content_type == 'image' %}
+                                <div class="media-container">
+                                    <img src="{% if current_content.image %}{{ current_content.image.url }}{% else %}{{ current_content.content_data }}{% endif %}" class="img-fluid w-100">
+                                </div>
+                            {% elif current_content.content_type == 'video' %}
+                                <div class="media-container shadow-lg">
+                                    {% if "youtube.com" in current_content.content_data or "youtu.be" in current_content.content_data %}
+                                        <div class="ratio ratio-16x9">
+                                            <iframe src="{{ current_content.content_data|youtube_embed_url }}" allowfullscreen></iframe>
+                                        </div>
+                                    {% else %}
+                                        <video controls class="w-100"><source src="{{ current_content.content_data }}" type="video/mp4"></video>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+
+                    <div class="lesson-footer">
+                        <div>
+                            {% if step_index > 0 %}
+                                <a href="?step={{ step_index|add:-1 }}" class="btn-nav btn-prev"><i class="bi bi-chevron-left"></i> Артка</a>
+                            {% elif prev_lesson %}
+                                <a href="{% url 'course_lesson' course.id prev_lesson.id %}" class="btn-nav btn-prev">Мурунку сабак</a>
+                            {% endif %}
+                        </div>
+                        <div>
+                            {% if step_index|add:1 < contents|length %}
+                                <a href="?step={{ step_index|add:1 }}" class="btn-nav btn-next">Кийинки кадам <i class="bi bi-chevron-right"></i></a>
+                            {% elif next_lesson %}
+                                <a href="{% url 'course_lesson' course.id next_lesson.id %}" class="btn-nav btn-next">Кийинки сабак <i class="bi bi-chevron-right"></i></a>
+                            {% else %}
+                                <a href="{% url 'student' %}" class="btn-nav btn-next bg-primary text-white">Курсту аяктоо <i class="bi bi-check2-all"></i></a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="comments-section mt-5">
+                    <h4 class="fw-bold mb-4">Суроолор жана талкуулоо ({{ comments|length|default:"0" }})</h4>
+                    <div class="comment-form-card mb-5">
+                        <form method="POST">
+                            {% csrf_token %}
+                            <textarea name="comment" class="form-control mb-3 border-0 shadow-sm" rows="3" placeholder="Ой-пикириңизди же сурооңузду калтырыңыз..." style="border-radius: 15px; background: var(--bg-body); color: var(--text-dark);"></textarea>
+                            <div class="text-end">
+                                <button type="submit" class="btn btn-success px-4 fw-bold" style="border-radius: 10px;">Жөнөтүү</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="comments-list">
+                        {% for comment in comments %}
+                            <div class="comment-item d-flex gap-3">
+                                <div class="logo-icon flex-shrink-0" style="width: 45px; height: 45px; border-radius: 12px;">{{ comment.user.username|first|upper }}</div>
+                                <div>
+                                    <div class="fw-bold">{{ comment.user.username }} <span class="ms-2 opacity-50 fw-normal small">{{ comment.created_at|timesince }} мурун</span></div>
+                                    <p class="mt-2 opacity-75">{{ comment.text }}</p>
+                                </div>
+                            </div>
+                        {% empty %}
+                            <p class="text-center text-muted">Азырынча комментарийлер жок. Биринчи болуп жазыңыз!</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </main>
+</div>
+
+<script>
+    const themeToggle = document.getElementById('theme-toggle');
+    const themeIcon = document.getElementById('theme-icon');
+    const body = document.body;
+
+    if (localStorage.getItem('theme') === 'dark') {
+        body.classList.add('dark-theme');
+        themeIcon.classList.replace('bi-moon-stars-fill', 'bi-sun-fill');
+    }
+
+    themeToggle.addEventListener('click', () => {
+        body.classList.toggle('dark-theme');
+        const isDark = body.classList.contains('dark-theme');
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        themeIcon.classList.replace(isDark ? 'bi-moon-stars-fill' : 'bi-sun-fill', isDark ? 'bi-sun-fill' : 'bi-moon-stars-fill');
+    });
+</script>
 {% endblock %}

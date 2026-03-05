@@ -1,191 +1,239 @@
 {% extends "front/base.html" %}
-{% block title %}{{ user.username }}{% endblock %}
+{% block title %}Регистрация{% endblock %}
 {% block content %}
 
     <div class="video-background">
         <video autoplay muted loop class="video-bg" playsinline>
-            <source src="https://videos.pexels.com/video-files/4328789/4328789-uhd_2560_1440_25fps.mp4"
-                    type="video/mp4">
-            Ваш браузер не поддерживает видеофон.
+            <source src="https://videos.pexels.com/video-files/4328789/4328789-uhd_2560_1440_25fps.mp4" type="video/mp4">
         </video>
-        <div class="overlay"></div>
+        <div class="video-overlay"></div>
     </div>
 
-    <div class="container my-5 main-container">
-
-
-        <div class="auth-container mx-auto bg-glass p-5 rounded-4 shadow-lg" style="max-width: 500px;">
-            <div class="text-center mb-4 text-white">
-                <i class="bi bi-person-plus display-1"></i>
-                <h2 class="fw-bold">Регистрация</h2>
-                <p class="text-light small">Заполните поля, чтобы создать аккаунт</p>
+    <div class="container main-container">
+        <div class="registration-card p-4 p-md-5">
+            <div class="text-center mb-5">
+                <div class="icon-wrapper mb-3">
+                    <div class="pulse-ring"></div>
+                    <i class="bi bi-person-plus-fill"></i>
+                </div>
+                <h2 class="fw-bold text-white mb-1">Кошулуу</h2>
+                <div class="h-separator mx-auto"></div>
+                <p class="text-white-50 small mt-2">Жаңы аккаунт түзүп, билим алууну баштаңыз</p>
             </div>
 
-            <form method="post" enctype="multipart/form-data" class="text-white">
+            <form method="post" enctype="multipart/form-data" class="needs-validation">
                 {% csrf_token %}
 
-                <!-- Имя пользователя -->
-                <div class="mb-3 input-group-custom">
-                    <input type="text" name="username" maxlength="150" required
-                           placeholder="Имя пользователя" id="id_username" class="form-control">
-                    <small class="form-text text-light">Не более 150 символов. Буквы, цифры и @/./+/-/_.</small>
+                <div class="row g-4">
+                    <div class="col-12">
+                        <div class="input-group-custom">
+                            <i class="bi bi-person input-icon"></i>
+                            <input type="text" name="username" maxlength="150" required placeholder="Колдонуучу аты" class="form-custom">
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="input-group-custom">
+                            <i class="bi bi-envelope input-icon"></i>
+                            <input type="email" name="email" required placeholder="Email дарек" class="form-custom">
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="input-group-custom">
+                            <i class="bi bi-phone input-icon"></i>
+                            <input type="text" name="phone" placeholder="+996 --- ---" class="form-custom">
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <div class="file-upload-wrapper">
+                            <label for="id_photo" class="file-label">
+                                <i class="bi bi-cloud-arrow-up me-2"></i>Профиль үчүн сүрөт тандаңыз
+                            </label>
+                            <input type="file" name="photo" accept="image/*" id="id_photo" class="form-control d-none">
+                            <div id="file-name-display" class="text-white-50 small mt-1 px-2">Файл тандала элек</div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="input-group-custom">
+                            <i class="bi bi-lock input-icon"></i>
+                            <input type="password" name="password1" required placeholder="Пароль" class="form-custom">
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="input-group-custom">
+                            <i class="bi bi-shield-lock input-icon"></i>
+                            <input type="password" name="password2" required placeholder="Кайталаңыз" class="form-custom">
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Email -->
-                <div class="mb-3 input-group-custom">
-                    <input type="email" name="email" maxlength="254" required
-                           placeholder="Email" id="id_email" class="form-control">
-                </div>
-
-                <!-- Телефон -->
-                <div class="mb-3 input-group-custom">
-                    <input type="text" name="phone" maxlength="255"
-                           placeholder="Телефон номер" id="id_phone" class="form-control">
-                </div>
-
-                <!-- Фото -->
-                <div class="mb-3 input-group-custom">
-                    <input type="file" name="photo" accept="image/*" id="id_photo" class="form-control">
-                </div>
-
-                <script>
-                    const input = document.getElementById('id_photo');
-                    const MAX_SIZE_MB = 2; // Максимум 2 МБ
-
-                    input.addEventListener('change', () => {
-                        const file = input.files[0];
-                        if (file && file.size > MAX_SIZE_MB * 1024 * 1024) {
-                            alert(`Файл слишком большой. Максимальный размер: ${MAX_SIZE_MB} МБ`);
-                            input.value = ''; // Сбрасываем выбранный файл
-                        }
-                    });
-                </script>
-
-                <!-- Пароль -->
-                <div class="mb-3 input-group-custom">
-                    <input type="password" name="password1" required
-                           placeholder="Пароль" id="id_password1" class="form-control">
-                </div>
-
-                <!-- Подтверждение пароля -->
-                <div class="mb-3 input-group-custom">
-                    <input type="password" name="password2" required
-                           placeholder="Подтверждение пароля" id="id_password2" class="form-control">
-                    <small class="form-text text-light">Введите пароль ещё раз для подтверждения.</small>
-                </div>
-
-                <div class="d-grid">
-                    <button type="submit" class="btn btn-success btn-lg rounded-pill py-3 shadow hover-glow">
-                        <i class="bi bi-person-check me-2"></i>Зарегистрироваться
+                <div class="d-grid mt-5">
+                    <button type="submit" class="btn-cyber py-3">
+                        <span>КАТТАЛУУ</span>
+                        <i class="bi bi-arrow-right-short fs-4"></i>
                     </button>
+                </div>
+
+                <div class="text-center mt-4">
+                    <p class="small text-white-50">Аккаунтуңуз барбы? 
+                        <a href="{% url 'login' %}" class="link-glow ms-1">Кирүү</a>
+                    </p>
                 </div>
             </form>
         </div>
-
-
     </div>
 
     <style>
-        /* Видео фон */
-        .video-background {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            z-index: 0;
+        :root {
+            --primary-cyan: #00f2ff;
+            --primary-green: #00ff88;
+            --glass-bg: rgba(15, 23, 42, 0.65);
+            --border-glow: rgba(0, 242, 255, 0.3);
         }
 
-        .video-bg {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            filter: brightness(0.5);
-        }
+        .video-background { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
+        .video-bg { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.5); }
+        .video-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.8) 100%); }
 
-        .overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-        }
+        .main-container { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 3rem 1rem; }
 
-        /* Основной контейнер */
-        .main-container {
+        /* Карточка стили */
+        .registration-card {
+            width: 100%;
+            max-width: 650px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 40px;
+            box-shadow: 0 40px 100px rgba(0, 0, 0, 0.6);
             position: relative;
-            z-index: 2;
+            overflow: hidden;
+        }
+
+        /* Иконка жана Анимация */
+        .icon-wrapper {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            margin: 0 auto;
             display: flex;
-            flex-direction: column;
-            justify-content: center;
             align-items: center;
-            min-height: 90vh;
-            padding: 1rem;
-            text-align: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--primary-cyan), var(--primary-green));
+            border-radius: 24px;
+            font-size: 2.2rem;
+            color: #000;
+            z-index: 1;
         }
 
-        /* Стеклянные карточки */
-        .bg-glass {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        /* Эффекты и анимации */
-        .hover-glow:hover {
-            box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
-            transform: translateY(-3px);
-            transition: all 0.3s ease;
-        }
-
-        .welcome-card, .auth-container {
-            animation: fadeInUp 0.8s ease-in-out;
+        .pulse-ring {
+            position: absolute;
             width: 100%;
-            max-width: 800px;
+            height: 100%;
+            border-radius: 24px;
+            background: var(--primary-cyan);
+            animation: pulse 2s infinite;
+            z-index: -1;
         }
 
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.5; }
+            100% { transform: scale(1.5); opacity: 0; }
         }
 
-        /* Адаптивность */
-        @media (max-width: 768px) {
-            .welcome-card h2 {
-                font-size: 1.5rem;
-            }
+        .h-separator { width: 50px; height: 3px; background: var(--primary-green); border-radius: 10px; }
 
-            .btn-lg {
-                font-size: 1rem;
-                padding: 0.8rem 1.2rem;
-            }
-
-            .main-container {
-                padding: 1rem;
-            }
+        /* Инпуттардын жаңы стили */
+        .input-group-custom { position: relative; }
+        
+        .input-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--primary-cyan);
+            font-size: 1.2rem;
+            opacity: 0.7;
         }
 
-        @media (max-width: 480px) {
-            .welcome-card {
-                padding: 1.5rem;
-            }
-
-            .display-6 {
-                font-size: 1.3rem;
-            }
-
-            .btn-lg {
-                width: 100%;
-            }
+        .form-custom {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 14px 15px 14px 45px;
+            color: white;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
+
+        .form-custom:focus {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--primary-cyan);
+            box-shadow: 0 0 15px var(--border-glow);
+            outline: none;
+        }
+
+        /* Сүрөт жүктөө стили */
+        .file-upload-wrapper {
+            background: rgba(0, 242, 255, 0.05);
+            border: 2px dashed rgba(0, 242, 255, 0.2);
+            border-radius: 16px;
+            padding: 15px;
+            text-align: center;
+            transition: 0.3s;
+        }
+        .file-upload-wrapper:hover { border-color: var(--primary-cyan); background: rgba(0, 242, 255, 0.1); }
+        .file-label { color: var(--primary-cyan); cursor: pointer; font-weight: 600; margin: 0; width: 100%; }
+
+        /* Кибер баскыч */
+        .btn-cyber {
+            background: linear-gradient(90deg, var(--primary-cyan), var(--primary-green));
+            border: none;
+            border-radius: 18px;
+            color: #000;
+            font-weight: 800;
+            letter-spacing: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.4s;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-cyber:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 15px 30px rgba(0, 255, 136, 0.3);
+        }
+
+        .link-glow { color: var(--primary-cyan); text-decoration: none; font-weight: bold; transition: 0.3s; }
+        .link-glow:hover { color: var(--primary-green); text-shadow: 0 0 10px var(--primary-green); }
+
+        ::placeholder { color: rgba(255, 255, 255, 0.2) !important; font-size: 0.9rem; }
     </style>
+
+    <script>
+        const photoInput = document.getElementById('id_photo');
+        const fileNameDisplay = document.getElementById('file-name-display');
+        const MAX_MB = 2;
+
+        photoInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                if (file.size > MAX_MB * 1024 * 1024) {
+                    alert(`Файл өтө чоң! Максималдуу көлөм: ${MAX_MB} МБ`);
+                    photoInput.value = '';
+                    fileNameDisplay.innerText = 'Файл тандала элек';
+                } else {
+                    fileNameDisplay.innerText = `Тандалды: ${file.name}`;
+                    fileNameDisplay.style.color = '#00ff88';
+                }
+            }
+        });
+    </script>
 
 {% endblock %}

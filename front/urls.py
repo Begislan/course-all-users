@@ -39,3 +39,4 @@ urlpatterns = [
     #courses
     path('admin_courses/', views.admin_courses, name='admin_courses'),
 ]
+ 

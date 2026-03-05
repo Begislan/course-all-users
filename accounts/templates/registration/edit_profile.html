@@ -1,0 +1,166 @@
+{% extends "front/base.html" %}
+{% block content %}
+
+<div class="profile-bg d-flex align-items-center justify-content-center">
+
+    <div class="profile-card p-5">
+
+        <h2 class="text-center mb-4 gradient-title">
+            Профилди оңдоо
+        </h2>
+
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <div class="text-center mb-4 position-relative">
+                {% if user.photo %}
+                    <img src="{{ user.photo.url }}" class="profile-img">
+                {% else %}
+                    <div class="profile-placeholder">
+                        <i class="bi bi-person-fill"></i>
+                    </div>
+                {% endif %}
+                <input type="file" name="photo" class="form-control form-control-sm mt-3 custom-input">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label custom-label">Атыңыз</label>
+                <input type="text" name="first_name" value="{{ user.first_name }}" class="form-control custom-input">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label custom-label">Телефон номери</label>
+                <input type="text" name="phone" value="{{ user.phone }}" class="form-control custom-input" placeholder="+996 ...">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label custom-label">Жаңы сырсөз</label>
+                <input type="password" name="password" class="form-control custom-input" placeholder="Жаңы сырсөзүңүздү киргизиңиз">
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label custom-label">Email</label>
+                <input type="email" name="email" value="{{ user.email }}" class="form-control custom-input">
+            </div>
+
+            <button type="submit" class="btn save-btn w-100">
+                <i class="bi bi-check-circle me-2"></i>САКТОО
+            </button>
+        </form>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert custom-alert mt-4 text-center">
+                    <i class="bi bi-check-circle me-2"></i>{{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+    </div>
+</div>
+
+<style>
+.profile-bg {
+    min-height: 100vh;
+    background: radial-gradient(circle at top, #0f172a, #020617);
+    padding: 40px 20px;
+}
+
+.profile-card {
+    width: 100%;
+    max-width: 520px;
+    background: rgba(30, 41, 59, 0.65);
+    backdrop-filter: blur(25px);
+    border-radius: 28px;
+    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow: 0 0 40px rgba(56,189,248,0.15);
+    animation: fadeUp 0.8s ease;
+}
+
+.gradient-title {
+    font-weight: 800;
+    background: linear-gradient(135deg, #38bdf8, #818cf8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.profile-img {
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #38bdf8;
+    box-shadow: 0 0 20px rgba(56,189,248,0.5);
+    transition: 0.3s;
+}
+
+.profile-img:hover {
+    transform: scale(1.05);
+}
+
+.profile-placeholder {
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #38bdf8, #818cf8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    color: #0f172a;
+    margin: 0 auto;
+}
+
+.custom-label {
+    color: #94a3b8;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.custom-input {
+    background: rgba(15,23,42,0.7);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: white;
+    border-radius: 14px;
+    padding: 12px;
+    transition: 0.3s;
+}
+
+.custom-input:focus {
+    border-color: #38bdf8;
+    box-shadow: 0 0 15px rgba(56,189,248,0.4);
+    background: rgba(15,23,42,0.9);
+    color: white;
+}
+
+.save-btn {
+    background: linear-gradient(135deg, #38bdf8, #818cf8);
+    border-radius: 16px;
+    font-weight: 700;
+    padding: 12px;
+    color: #0f172a;
+    transition: 0.3s;
+}
+
+.save-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(56,189,248,0.4);
+}
+
+.custom-alert {
+    background: rgba(34,197,94,0.15);
+    border: 1px solid rgba(34,197,94,0.4);
+    color: #4ade80;
+    border-radius: 12px;
+    padding: 10px;
+}
+
+@keyframes fadeUp {
+    from {opacity:0; transform: translateY(30px);}
+    to {opacity:1; transform: translateY(0);}
+}
+</style>
+
+{% endblock %}

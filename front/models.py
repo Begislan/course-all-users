@@ -51,3 +51,30 @@ class Content(models.Model):
 
     def __str__(self):
         return f"{self.get_content_type_display()} - {self.lesson.title}"
+        # ... (мурунку моделдер)
+
+class Comment(models.Model):
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name='comments')
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    text = models.TextField("Комментарий")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at'] # Жаңылары өйдө жакта турат
+
+    def __str__(self):
+        return f"{self.user.username} - {self.lesson.title}"
+    # Бул модель студенттин кайсы сабакты бүтүргөнүн сактайт
+class UserProgress(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='progress')
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
+    is_completed = models.BooleanField(default=True)
+    completed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        # Бир студент бир сабакты бир эле жолу "бүттү" деп белгилеши керек
+        unique_together = ('user', 'lesson')
+
+    def __str__(self):
+        return f"{self.user.username} аяктады: {self.lesson.title}"
+    

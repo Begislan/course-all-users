@@ -3,6 +3,21 @@
 {% block content %}
 
 <style>
+    :root {
+        --primary-color: #00f2fe;
+        --secondary-color: #4facfe;
+        --glass-bg: rgba(255, 255, 255, 0.1);
+        --glass-border: rgba(255, 255, 255, 0.15);
+        --text-bright: #ffffff;
+        --text-muted: #d1d1d1;
+    }
+
+    body {
+        background: #0f172a; /* Видео жүктөлгүчө күңүрт фон */
+        font-family: 'Inter', sans-serif;
+        color: var(--text-bright);
+    }
+
     /* Видео фон */
     .video-background {
         position: fixed;
@@ -11,14 +26,14 @@
         width: 100%;
         height: 100%;
         overflow: hidden;
-        z-index: 0;
+        z-index: -1;
     }
 
     .video-bg {
         width: 100%;
         height: 100%;
         object-fit: cover;
-        filter: brightness(0.4);
+        filter: brightness(0.3) saturate(1.2);
     }
 
     .overlay {
@@ -27,184 +42,193 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0, 0, 0, 0.5);
-    }
-
-    /* Контент */
-    .content-container {
-        position: relative;
-        z-index: 1;
-        padding: 60px 20px;
+        background: radial-gradient(circle, transparent 20%, #0f172a 100%);
     }
 
     /* Хедер */
     .custom-header {
-        position: relative;
-        z-index: 2;
-        background: rgba(0, 0, 0, 0.6);
-        backdrop-filter: blur(10px);
-        padding: 15px 30px;
-        border-radius: 0 0 20px 20px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        background: rgba(15, 23, 42, 0.8);
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--glass-border);
+        padding: 10px 0;
     }
 
-    .custom-header .navbar-brand {
-        font-weight: 700;
-        font-size: 1.5rem;
-        color: #fff;
-    }
-
-    .custom-header .nav-link {
-        color: #ddd !important;
-        font-weight: 500;
-        margin: 0 10px;
-        transition: color 0.3s ease;
-    }
-
-    .custom-header .nav-link:hover {
-        color: #00e676 !important;
-    }
-
-    .custom-header .dropdown-toggle {
-        color: #fff;
-        font-weight: 600;
-    }
-
-    .custom-header img {
-        border-radius: 50%;
+    .navbar-brand {
+        font-weight: 800;
+        letter-spacing: -0.5px;
+        background: linear-gradient(to right, #4facfe 0%, #00f2fe 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
     }
 
     /* Карточки курсов */
+    .content-container {
+        padding: 40px 15px;
+    }
+
     .course-card {
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 20px;
-        backdrop-filter: blur(10px);
-        padding: 20px;
-        margin-bottom: 30px;
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-        color: #fff;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-border);
+        border-radius: 24px;
+        backdrop-filter: blur(16px);
+        padding: 24px;
+        margin-bottom: 24px;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        height: 100%;
     }
 
     .course-card:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+        transform: translateY(-10px) scale(1.02);
+        background: rgba(255, 255, 255, 0.15);
+        border-color: var(--primary-color);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
     }
 
     .course-title {
-        font-size: 1.5rem;
+        font-size: 1.4rem;
         font-weight: 700;
-        margin-bottom: 10px;
+        margin: 12px 0;
+        line-height: 1.2;
+    }
+
+    .author-badge {
+        background: rgba(79, 172, 254, 0.2);
+        color: var(--primary-color);
+        padding: 4px 12px;
+        border-radius: 100px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
     }
 
     .course-meta {
-        font-size: 0.9rem;
-        color: #ccc;
-        margin-bottom: 10px;
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        gap: 5px;
     }
 
     .course-description {
-        font-size: 1rem;
-        margin-bottom: 15px;
+        font-size: 0.95rem;
+        color: var(--text-muted);
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        margin-bottom: 20px;
     }
 
+    /* Кнопка */
     .course-link {
-        display: inline-block;
-        padding: 10px 18px;
-        border-radius: 10px;
-        background: #00c853;
-        color: #fff;
-        font-weight: 600;
+        width: 100%;
+        text-align: center;
+        padding: 12px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+        color: #000;
+        font-weight: 700;
         text-decoration: none;
-        transition: background 0.3s ease;
+        display: inline-block;
+        transition: opacity 0.3s;
     }
 
     .course-link:hover {
-        background: #00e676;
+        opacity: 0.9;
+        color: #000;
     }
 
-    .course-image img {
-        border-radius: 15px;
-        max-height: 200px;
+    /* Изображение */
+    .course-image-wrapper {
+        position: relative;
+        border-radius: 16px;
+        overflow: hidden;
+        aspect-ratio: 16/9;
+    }
+
+    .course-image-wrapper img {
+        width: 100%;
+        height: 100%;
         object-fit: cover;
+    }
+
+    .dropdown-menu {
+        background: rgba(15, 23, 42, 0.95);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--glass-border);
+    }
+
+    .dropdown-item {
+        color: white;
+    }
+
+    .dropdown-item:hover {
+        background: var(--glass-bg);
+        color: var(--primary-color);
     }
 </style>
 
-
-<!-- Видео фон -->
 <div class="video-background">
     <video autoplay muted loop class="video-bg" playsinline>
-        <source src="https://videos.pexels.com/video-files/4328789/4328789-uhd_2560_1440_25fps.mp4"
-                type="video/mp4">
-        Ваш браузер не поддерживает видеофон.
+        <source src="https://videos.pexels.com/video-files/4328789/4328789-uhd_2560_1440_25fps.mp4" type="video/mp4">
     </video>
     <div class="overlay"></div>
 </div>
 
-<!-- Хедер -->
 <header class="custom-header">
-    <nav class="navbar navbar-expand-lg navbar-dark">
-        <div class="container-fluid">
-            <!-- Лого -->
-            <a class="navbar-brand" href="/">Courses</a>
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="/">🚀 PRO COURSES</a>
 
-            <!-- Меню -->
-{#            <div class="collapse navbar-collapse">#}
-{#                <ul class="navbar-nav me-auto mb-2 mb-lg-0">#}
-{#                    <li class="nav-item"><a class="nav-link" href="#">Курсы</a></li>#}
-{#                    <li class="nav-item"><a class="nav-link" href="#">О нас</a></li>#}
-{#                    <li class="nav-item"><a class="nav-link" href="#">Контакты</a></li>#}
-{#                </ul>#}
-{#            </div>#}
-
-            <!-- Профиль -->
             <div class="dropdown">
                 <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle"
-                   data-bs-toggle="dropdown" aria-expanded="false">
+                   data-bs-toggle="dropdown">
                     {% if user.photo %}
-                        <img src="{{ user.photo.url }}" width="36" height="36" class="me-2">
+                        <img src="{{ user.photo.url }}" width="32" height="32" class="rounded-circle me-2 border border-info">
                     {% endif %}
-                    <span>{{ user.username }}</span>
+                    <span class="fw-bold">{{ user.username }}</span>
                 </a>
-                <ul class="dropdown-menu dropdown-menu-end shadow">
-                    <li><a class="dropdown-item" href="/">🏠 На главную</a></li>
-                    <li><a class="dropdown-item" href="{% url 'logout' %}">🚪 Выход</a></li>
+                <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                    <li><a class="dropdown-item" href="/">🏠 Башкы бет</a></li>
+                    <li><hr class="dropdown-divider bg-secondary"></li>
+                    <li><a class="dropdown-item text-danger" href="{% url 'logout' %}">🚪 Чыгуу</a></li>
                 </ul>
             </div>
         </div>
     </nav>
 </header>
 
-
-<!-- Контент -->
 <div class="container content-container">
-    <div class="row">
-      {% for cours in courses %}
-    <div class="col-md-6">
-        <div class="course-card">
-            <div class="row align-items-center">
-                <!-- Текст -->
-                <div class="col-7">
-                    <strong class="d-inline-block mb-2 text-success">{{ cours.author }}</strong>
-                    <h3 class="course-title">{{ cours.title }}</h3>
-                    <div class="course-meta">{{ cours.created_at }}</div>
-                    <p class="course-description">{{ cours.description }}</p>
-                    <a href="#" class="course-link">Посмотреть</a>
-                </div>
-
-                <!-- Картинка -->
-                {% if cours.image %}
-                    <div class="col-5 text-center">
-                        <div class="course-image">
-                            <img src="{{ cours.image.url }}" class="img-fluid rounded">
-                        </div>
+    <div class="row g-4">
+        {% for cours in courses %}
+        <div class="col-lg-6 col-xl-4"> <div class="course-card d-flex flex-column justify-content-between">
+                <div>
+                    {% if cours.image %}
+                    <div class="course-image-wrapper mb-3">
+                        <img src="{{ cours.image.url }}" alt="{{ cours.title }}">
                     </div>
-                {% endif %}
+                    {% endif %}
+                    
+                    <span class="author-badge">👤 {{ cours.author }}</span>
+                    <h3 class="course-title">{{ cours.title }}</h3>
+                    <div class="course-meta mb-2">
+                        <span>📅 {{ cours.created_at|date:"d.m.Y" }}</span>
+                    </div>
+                    <p class="course-description">{{ cours.description }}</p>
+                </div>
+                
+                <a href="#" class="course-link">Курсту көрүү</a>
             </div>
         </div>
-    </div>
-{% endfor %}
-
+        {% empty %}
+        <div class="col-12 text-center py-5">
+            <h2 class="text-muted">Курстар азырынча жок...</h2>
+        </div>
+        {% endfor %}
     </div>
 </div>
+
 {% endblock %}

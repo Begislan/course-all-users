@@ -7,6 +7,8 @@ from django.shortcuts import get_object_or_404, render, redirect
 from .models import Course, Lesson, Content
 from functools import wraps
 from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, get_object_or_404
+from .models import Course, Lesson ,Comment , UserProgress
 
 def role_required(role):
     """
@@ -251,3 +253,88 @@ def upload_users(request, user_id):
 def admin_courses(request):
     courses = Course.objects.all()
     return render(request, 'admin/courses.html', {'courses': courses})
+    # views.py
+@login_required
+@role_required('student')
+def student(request):
+    """Бардык курстарды жана алардын прогрессин тизмектейт"""
+    course_list = Course.objects.all()
+    
+    for cour in course_list:
+        total_lessons = cour.lessons.count()
+        
+        # Студент бул курстан канча сабак бүтүргөнүн эсептөө
+        completed_count = UserProgress.objects.filter(
+            user=request.user, 
+            lesson__course=cour
+        ).count()
+        
+        # Пайызды эсептөө
+        if total_lessons > 0:
+            cour.progress_percent = int((completed_count / total_lessons) * 100)
+        else:
+            cour.progress_percent = 0
+            
+    return render(request, 'student/student.html', {'course': course_list})
+
+# --- САБАКТЫ КӨРҮҮ ЖАНА ПРОГРЕСС ---
+@login_required
+@role_required('student')
+def course_view(request, course_id, lesson_id=None):
+    course = get_object_or_404(Course, id=course_id)
+    # 1. Тизмени QuerySet эмес, тизме катары алабыз
+    lessons = list(course.lessons.all().order_by('order'))
+    
+    if not lessons:
+        return render(request, 'student/lesson.html', {'course': course, 'lessons': []})
+
+    # 2. Тандалган сабакты аныктоо
+    selected_lesson = None
+    if lesson_id:
+        # Lesson_id боюнча табуу, эгер табылбаса биринчи сабакты алуу
+        selected_lesson = next((l for l in lessons if l.id == int(lesson_id)), lessons[0])
+    else:
+        selected_lesson = lessons[0]
+
+    # Прогрессти жазуу
+    UserProgress.objects.get_or_create(user=request.user, lesson=selected_lesson)
+
+    # Контенттерди алуу
+    contents = list(selected_lesson.contents.all().order_by('order'))
+    
+    # Кадам индексин коопсуз алуу
+    try:
+        step_index = int(request.GET.get('step', 0))
+    except (ValueError, TypeError):
+        step_index = 0
+    
+    if step_index < 0: step_index = 0
+    if contents and step_index >= len(contents): step_index = len(contents) - 1
+    current_content = contents[step_index] if contents else None
+
+    # Навигация
+    try:
+        current_lesson_index = lessons.index(selected_lesson)
+        prev_lesson = lessons[current_lesson_index - 1] if current_lesson_index > 0 else None
+        next_lesson = lessons[current_lesson_index + 1] if current_lesson_index < len(lessons) - 1 else None
+    except (ValueError, IndexError):
+        prev_lesson = next_lesson = None
+
+    # Прогресс пайызы
+    total_l = len(lessons)
+    done_l = UserProgress.objects.filter(user=request.user, lesson__course=course).count()
+    progress_percent = int((done_l / total_l) * 100) if total_l > 0 else 0
+
+    context = {
+        'course': course,
+        'lessons': lessons,
+        'selected_lesson': selected_lesson,
+        'contents': contents,
+        'current_content': current_content,
+        'step_index': step_index,
+        'prev_lesson': prev_lesson,
+        'next_lesson': next_lesson,
+        'comments': selected_lesson.comments.all().order_by('-created_at'),
+        'progress_percent': progress_percent,
+    }
+    return render(request, 'student/lesson.html', context)
