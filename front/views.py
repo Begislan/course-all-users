@@ -4,11 +4,9 @@ from accounts.models import CustomUser as User, CustomUser
 from django.contrib.auth.decorators import user_passes_test
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, render, redirect
-from .models import Course, Lesson, Content
+from .models import Course, Lesson, Content ,  Quiz, Question, Choice, UserProgress , Comment
 from functools import wraps
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, get_object_or_404
-from .models import Course, Lesson ,Comment , UserProgress
 
 def role_required(role):
     """
@@ -257,44 +255,38 @@ def admin_courses(request):
 @login_required
 @role_required('student')
 def student(request):
-    """Бардык курстарды жана алардын прогрессин тизмектейт"""
     course_list = Course.objects.all()
     
     for cour in course_list:
         total_lessons = cour.lessons.count()
+        # Курстун биринчи сабагын алуу (url түзүү үчүн керек)
+        first_lesson = cour.lessons.order_by('order').first()
+        cour.first_lesson_id = first_lesson.id if first_lesson else None
         
-        # Студент бул курстан канча сабак бүтүргөнүн эсептөө
-        completed_count = UserProgress.objects.filter(
-            user=request.user, 
-            lesson__course=cour
-        ).count()
-        
-        # Пайызды эсептөө
-        if total_lessons > 0:
-            cour.progress_percent = int((completed_count / total_lessons) * 100)
-        else:
-            cour.progress_percent = 0
+        # ... калган прогресс эсептөө логикаңыз ...
+        completed_count = UserProgress.objects.filter(user=request.user, lesson__course=cour).count()
+        cour.progress_percent = int((completed_count / total_lessons) * 100) if total_lessons > 0 else 0
             
     return render(request, 'student/student.html', {'course': course_list})
-
+# --- САБАКТЫ КӨРҮҮ ЖАНА ПРОГРЕСС ---
 # --- САБАКТЫ КӨРҮҮ ЖАНА ПРОГРЕСС ---
 @login_required
 @role_required('student')
 def course_view(request, course_id, lesson_id=None):
     course = get_object_or_404(Course, id=course_id)
-    # 1. Тизмени QuerySet эмес, тизме катары алабыз
     lessons = list(course.lessons.all().order_by('order'))
     
     if not lessons:
         return render(request, 'student/lesson.html', {'course': course, 'lessons': []})
 
-    # 2. Тандалган сабакты аныктоо
-    selected_lesson = None
+    # Тандалган сабакты аныктоо
     if lesson_id:
-        # Lesson_id боюнча табуу, эгер табылбаса биринчи сабакты алуу
         selected_lesson = next((l for l in lessons if l.id == int(lesson_id)), lessons[0])
     else:
         selected_lesson = lessons[0]
+
+    # ТЕСТ БАРБЫ ЖЕ ЖОК ПУ ТЕКШЕРҮҮ (Ушул жерде кошулду)
+    has_quiz = hasattr(selected_lesson, 'quiz')
 
     # Прогрессти жазуу
     UserProgress.objects.get_or_create(user=request.user, lesson=selected_lesson)
@@ -302,7 +294,7 @@ def course_view(request, course_id, lesson_id=None):
     # Контенттерди алуу
     contents = list(selected_lesson.contents.all().order_by('order'))
     
-    # Кадам индексин коопсуз алуу
+    # Кадам индекси
     try:
         step_index = int(request.GET.get('step', 0))
     except (ValueError, TypeError):
@@ -313,22 +305,20 @@ def course_view(request, course_id, lesson_id=None):
     current_content = contents[step_index] if contents else None
 
     # Навигация
-    try:
-        current_lesson_index = lessons.index(selected_lesson)
-        prev_lesson = lessons[current_lesson_index - 1] if current_lesson_index > 0 else None
-        next_lesson = lessons[current_lesson_index + 1] if current_lesson_index < len(lessons) - 1 else None
-    except (ValueError, IndexError):
-        prev_lesson = next_lesson = None
+    current_lesson_index = lessons.index(selected_lesson)
+    prev_lesson = lessons[current_lesson_index - 1] if current_lesson_index > 0 else None
+    next_lesson = lessons[current_lesson_index + 1] if current_lesson_index < len(lessons) - 1 else None
 
     # Прогресс пайызы
     total_l = len(lessons)
-    done_l = UserProgress.objects.filter(user=request.user, lesson__course=course).count()
+    done_l = UserProgress.objects.filter(user=request.user, lesson__course=course, is_completed=True).count()
     progress_percent = int((done_l / total_l) * 100) if total_l > 0 else 0
 
     context = {
         'course': course,
         'lessons': lessons,
         'selected_lesson': selected_lesson,
+        'has_quiz': has_quiz,  # Бул шаблондогу if has_quiz үчүн керек!
         'contents': contents,
         'current_content': current_content,
         'step_index': step_index,
@@ -337,4 +327,48 @@ def course_view(request, course_id, lesson_id=None):
         'comments': selected_lesson.comments.all().order_by('-created_at'),
         'progress_percent': progress_percent,
     }
+    
+    # Эгер POST болсо, комментарий сактоо логикасы
+    if request.method == 'POST':
+        text = request.POST.get('comment')
+        if text:
+            Comment.objects.create(lesson=selected_lesson, user=request.user, text=text)
+            return redirect(request.path)
+
     return render(request, 'student/lesson.html', context)
+
+# --- ТЕСТТИ АЛУУ ---
+@login_required
+@role_required('student')
+def take_quiz(request, lesson_id):
+    lesson = get_object_or_404(Lesson, id=lesson_id)
+    quiz = get_object_or_404(Quiz, lesson=lesson)
+    questions = quiz.questions.all()
+
+    if request.method == 'POST':
+        correct_answers = 0
+        total_questions = questions.count()
+
+        for question in questions:
+            selected_choice_id = request.POST.get(f'question_{question.id}')
+            if selected_choice_id:
+                choice = get_object_or_404(Choice, id=selected_choice_id)
+                if choice.is_correct:
+                    correct_answers += 1
+
+        score_percentage = (correct_answers / total_questions) * 100 if total_questions > 0 else 0
+        is_passed = score_percentage >= quiz.pass_percentage
+
+        # Прогрессти жаңыртуу
+        progress, created = UserProgress.objects.get_or_create(user=request.user, lesson=lesson)
+        progress.score = score_percentage
+        progress.is_completed = is_passed
+        progress.save()
+
+        return render(request, 'teacher/quiz_result.html', {
+            'quiz': quiz,
+            'score': score_percentage,
+            'is_passed': is_passed
+        })
+
+    return render(request, 'teacher/quiz.html', {'quiz': quiz, 'questions': questions})

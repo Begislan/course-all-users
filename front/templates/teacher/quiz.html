@@ -1,0 +1,139 @@
+{% extends "front/base.html" %}
+
+{% block content %}
+<style>
+    .video-background { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; overflow: hidden; }
+    .video-bg { width: 100%; height: 100%; object-fit: cover; }
+    .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); }
+
+    .main-container { padding: 40px 20px; z-index: 1; position: relative; }
+    .quiz-container { max-width: 850px; margin: 0 auto; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(15px); padding: 30px; border-radius: 25px; border: 1px solid rgba(255, 255, 255, 0.2); }
+    
+    .timer-badge { background: rgba(255, 71, 87, 0.2); color: #ff4757; padding: 10px 20px; border-radius: 15px; font-weight: bold; border: 1px solid rgba(255, 71, 87, 0.3); }
+    .question-card { background: rgba(255, 255, 255, 0.05); border-radius: 20px; padding: 20px; border: 1px solid rgba(255, 255, 255, 0.1); }
+    
+    .option-label { cursor: pointer; display: flex; align-items: center; background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 12px; transition: 0.3s; color: #fff; margin-bottom: 10px; }
+    .option-label:hover { background: rgba(255, 255, 255, 0.15); }
+    .option-label input { margin-right: 15px; transform: scale(1.2); }
+    
+    /* Камера кутучасы */
+    #camera-box { position: fixed; top: 20px; right: 20px; width: 160px; height: 120px; border-radius: 15px; overflow: hidden; border: 3px solid #10b981; z-index: 1000; }
+</style>
+
+<div id="camera-box">
+    <video id="webcam" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
+</div>
+
+<div class="video-background">
+    <video autoplay muted loop class="video-bg" playsinline>
+        <source src="https://videos.pexels.com/video-files/4328789/4328789-uhd_2560_1440_25fps.mp4" type="video/mp4">
+    </video>
+    <div class="overlay"></div>
+</div>
+
+<div class="container main-container">
+    <div class="quiz-container">
+        <div class="alert alert-warning mb-4">
+            <strong>Эскертүү!</strong> Тест учурунда камераңыз иштеп турат. Браузерден чыгууга же экрандан алыстап кетүүгө тыюу салынат. Эреже бузулса, тест <b>автоматтык түрдө тапшырылат!</b>
+        </div>
+        
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="text-white fw-bold">{{ quiz.title }}</h2>
+            <div class="timer-badge"><i class="bi bi-alarm"></i> <span id="timer">--:--</span></div>
+        </div>
+
+        <form id="quiz-form" method="POST">
+            {% csrf_token %}
+            {% for question in questions %}
+            <div class="question-card mb-4">
+                <p class="text-white fs-5 fw-semibold mb-3">{{ forloop.counter }}. {{ question.text }}</p>
+                {% for choice in question.choices.all %}
+                <label class="option-label">
+                    <input type="radio" name="question_{{ question.id }}" value="{{ choice.id }}" required>
+                    <span class="option-text">{{ choice.text }}</span>
+                </label>
+                {% endfor %}
+            </div>
+            {% endfor %}
+            <button type="submit" class="btn btn-primary w-100 py-3 mt-3 fw-bold">Тестти аяктоо</button>
+        </form>
+    </div>
+</div>
+
+<script>
+const video = document.getElementById('webcam');
+    const form = document.getElementById('quiz-form');
+    let stream = null;
+
+    async function setupCamera() {
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            video.srcObject = stream;
+        } catch (err) {
+            alert("Тестти баштоо үчүн камера керек!");
+            window.location.href = "{% url 'student' %}";
+        }
+    }
+    setupCamera();
+
+    // 1. Камеранын абалын үзгүлтүксүз текшерүү
+    setInterval(() => {
+        if (!stream) return;
+        
+        const track = stream.getVideoTracks()[0];
+        
+        // Камера өчүрүлсө же уруксат алынбай калса
+        if (!track || !track.enabled || track.readyState === 'ended') {
+            alert("Камера өчүрүлдү! Тест аяктады.");
+            form.submit();
+        }
+
+        // 2. Камера жабылганын аныктоо (физикалык шторка)
+        const canvas = document.createElement('canvas');
+        canvas.width = 64; 
+        canvas.height = 64;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+
+        let sum = 0;
+        for (let i = 0; i < data.length; i += 4) {
+            sum += (data[i] + data[i+1] + data[i+2]) / 3;
+        }
+        let average = sum / (data.length / 4);
+
+        // Консоль аркылуу маанини текшерип, өзүңүзгө ылайыктуусун коюңуз
+        // console.log("Avg Brightness:", average); 
+
+        // Эгер орточо жарыктык 3төн төмөн (кара) же 250дөн жогору (өтө ачык ак) болсо
+        // Эгер камераңыз жабылганда боз түс көрсөтсө, чекти (threshold) өзгөртүңүз (мисалы 20)
+        if (average < 110 || average > 220) { 
+             alert("Камера жабык экендиги аныкталды!");
+             form.submit();
+        }
+    }, 2000);
+
+    // 3. Таймер жана Visibility
+    let timeLeft = {{ quiz.time_limit|default:30 }} * 60;
+    const timerElem = document.getElementById('timer');
+    const countdown = setInterval(() => {
+        let min = Math.floor(timeLeft / 60);
+        let sec = timeLeft % 60;
+        timerElem.innerText = `${min}:${sec < 10 ? '0' : ''}${sec}`;
+        if (timeLeft <= 0) { clearInterval(countdown); form.submit(); }
+        timeLeft--;
+    }, 1000);
+
+    document.addEventListener("visibilitychange", () => {
+        if (document.hidden) { 
+            alert("Тест учурунда браузерден чыгууга болбойт!");
+            form.submit(); 
+        }
+    });
+
+    // Fullscreen мажбурлоо
+    document.addEventListener('click', () => {
+        if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+    }, { once: true });
+</script>   
+{% endblock %}

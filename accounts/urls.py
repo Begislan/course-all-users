@@ -1,4 +1,5 @@
 from django.urls import path
+from . import views
 from .views import (
     register_view, 
     login_view,            # Кадимки кирүү функциясы
@@ -22,4 +23,5 @@ urlpatterns = [
     # Профиль жана чыгуу
     path('logout/', logout_view, name='logout'),
     path('profile/edit/', edit_profile, name='edit_profile'),
+   
 ]

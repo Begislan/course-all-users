@@ -2,30 +2,29 @@ from django.db import models
 from accounts.models import CustomUser
 from django.core.exceptions import ValidationError
 
-# Выбор типов контента
+# Мазмундун түрлөрү
 CONTENT_TYPES = (
     ('text', 'Текст'),
-    ('image', 'Изображение'),
+    ('image', 'Сүрөт'),
     ('video', 'Видео'),
     ('file', 'Файл'),
 )
 
 class Course(models.Model):
     author = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='courses')
-    title = models.CharField("Название курса", max_length=255)
-    description = models.TextField("Описание", blank=True)
-    image = models.ImageField("Обложка курса", upload_to='course_images/', blank=True, null=True)
-    created_at = models.DateTimeField("Дата создания", auto_now_add=True)
+    title = models.CharField("Курстун аталышы", max_length=255)
+    description = models.TextField("Сүрөттөмө", blank=True)
+    image = models.ImageField("Курстун мукабасы", upload_to='course_images/', blank=True, null=True)
+    created_at = models.DateTimeField("Түзүлгөн күнү", auto_now_add=True)
 
     def __str__(self):
         return self.title
 
-
 class Lesson(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='lessons')
-    title = models.CharField("Название урока", max_length=255)
-    order = models.PositiveIntegerField("Порядок", default=0)
-    created_at = models.DateTimeField("Дата создания", auto_now_add=True)
+    title = models.CharField("Сабактын аталышы", max_length=255)
+    order = models.PositiveIntegerField("Тартиби", default=0)
+    created_at = models.DateTimeField("Түзүлгөн күнү", auto_now_add=True)
 
     class Meta:
         ordering = ['order']
@@ -33,25 +32,55 @@ class Lesson(models.Model):
     def __str__(self):
         return f"{self.order}. {self.title}"
 
-def validate_file_size(value):
-    limit = 5 * 1024 * 1024  # 5 MB
-    if value.size > limit:
-        raise ValidationError('Размер файла не должен превышать 5 МБ.')
+# Тест системасы
+class Quiz(models.Model):
+    lesson = models.OneToOneField(Lesson, on_delete=models.CASCADE, related_name='quiz')
+    title = models.CharField("Тесттин аталышы", max_length=255)
+    time_limit = models.PositiveIntegerField("Убакыт чектөөсү (мүнөт менен)", default=5)
+    pass_percentage = models.PositiveIntegerField("Өтүү упайы (%)", default=70)
 
+    def __str__(self):
+        return f"Тест: {self.lesson.title}"
 
+class Question(models.Model):
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='questions')
+    text = models.TextField("Суроо")
+
+    def __str__(self):
+        return self.text[:50]
+
+class Choice(models.Model):
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='choices')
+    text = models.CharField("Вариант", max_length=255)
+    is_correct = models.BooleanField("Туура жооп", default=False)
+
+    def __str__(self):
+        return self.text
+
+# Мазмун (Контент)
 class Content(models.Model):
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name='contents')
-    content_type = models.CharField("Тип контента", max_length=10, choices=CONTENT_TYPES)
-    content_data = models.TextField("Содержимое / ссылка / текст")
+    content_type = models.CharField("Контенттин түрү", max_length=10, choices=CONTENT_TYPES)
+    content_data = models.TextField("Маалымат / Шилтеме / Текст", blank=True)
     file = models.FileField("Файл", upload_to='content_files/', blank=True, null=True)
-    order = models.PositiveIntegerField("Порядок", default=0)
+    order = models.PositiveIntegerField("Тартиби", default=0)
 
     class Meta:
         ordering = ['order']
 
+# Прогресс жана Тесттин жыйынтыктары
+class UserProgress(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='progress')
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
+    is_completed = models.BooleanField("Аяктады", default=False)
+    score = models.FloatField("Тест упайы", default=0.0)
+    completed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'lesson')
+
     def __str__(self):
-        return f"{self.get_content_type_display()} - {self.lesson.title}"
-        # ... (мурунку моделдер)
+        return f"{self.user.username} - {self.lesson.title} ({self.score}%)"
 
 class Comment(models.Model):
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name='comments')
@@ -60,21 +89,4 @@ class Comment(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ['-created_at'] # Жаңылары өйдө жакта турат
-
-    def __str__(self):
-        return f"{self.user.username} - {self.lesson.title}"
-    # Бул модель студенттин кайсы сабакты бүтүргөнүн сактайт
-class UserProgress(models.Model):
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='progress')
-    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
-    is_completed = models.BooleanField(default=True)
-    completed_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        # Бир студент бир сабакты бир эле жолу "бүттү" деп белгилеши керек
-        unique_together = ('user', 'lesson')
-
-    def __str__(self):
-        return f"{self.user.username} аяктады: {self.lesson.title}"
-    
+        ordering = ['-created_at']

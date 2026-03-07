@@ -1,0 +1,88 @@
+{% extends "front/base.html" %}
+
+{% block content %}
+<div class="video-background">
+    <video autoplay muted loop class="video-bg" playsinline>
+        <source src="https://videos.pexels.com/video-files/4328789/4328789-uhd_2560_1440_25fps.mp4" type="video/mp4">
+    </video>
+    <div class="video-overlay"></div>
+</div>
+
+<div class="d-flex align-items-center justify-content-center min-vh-100 position-relative" style="z-index: 2;">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-12 col-lg-8">
+                <div class="registration-card p-4 p-md-5 bg-glass">
+                    <div class="text-center mb-4">
+                        <div class="icon-box mb-3" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                            <i class="bi bi-chat-dots-fill text-white"></i>
+                        </div>
+                        <h2 class="text-white fw-bold">Байланышуу</h2>
+                        <p class="text-white-50">Сурооңуз болсо, биздин командага жазыңыз</p>
+                    </div>
+
+                    <form method="post" class="row g-3">
+                        {% csrf_token %}
+                        <div class="col-md-6">
+                            <input type="text" name="name" placeholder="Атыңыз" class="form-custom" required>
+                        </div>
+                        <div class="col-md-6">
+                            <input type="email" name="email" placeholder="Email" class="form-custom" required>
+                        </div>
+                        <div class="col-12">
+                            <input type="text" name="subject" placeholder="Тема" class="form-custom" required>
+                        </div>
+                        <div class="col-12">
+                            <textarea name="message" rows="4" placeholder="Билдирүүңүз..." class="form-custom" required></textarea>
+                        </div>
+                        <div class="col-12 d-grid mt-4">
+                            <button type="submit" class="btn-premium py-3" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                                <i class="bi bi-send-fill me-2"></i>БИЛДИРҮҮ ЖӨНӨТҮҮ
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Видео фонду экранга толук жабыштыруу */
+    .video-background {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        z-index: 0;
+    }
+    .video-bg {
+        width: 100%; height: 100%;
+        object-fit: cover;
+        filter: brightness(0.4);
+    }
+
+    /* Форманын стили */
+    .bg-glass {
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .form-custom {
+        width: 100%; background: rgba(0,0,0,0.3);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 10px; padding: 12px; color: white;
+    }
+    .icon-box {
+        width: 60px; height: 60px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        margin: 0 auto; font-size: 24px;
+    }
+    .btn-premium {
+        border: none; border-radius: 10px; color: white;
+        font-weight: bold; transition: 0.3s;
+    }
+    .btn-premium:hover { transform: scale(1.02); opacity: 0.9; }
+</style>
+{% endblock %}

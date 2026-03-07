@@ -5,7 +5,9 @@ from django.contrib import messages
 from django.core.mail import send_mail
 from django.contrib.auth.decorators import login_required
 from .forms import RegisterForm, UserEditForm, LoginForm # LoginForm кошулду
-from .models import CustomUser, EmailOTP
+from .models import CustomUser, EmailOTP , ContactMessage
+
+
 
 # 1. Регистрация
 def register_view(request):
@@ -100,3 +102,28 @@ def edit_profile(request):
     else:
         form = UserEditForm(instance=request.user)
     return render(request, 'registration/edit_profile.html', {'form': form})
+def contact_view(request):
+    if request.method == "POST":
+        name = request.POST.get('name')
+        email = request.POST.get('email')
+        subject = request.POST.get('subject')
+        message = request.POST.get('message')
+
+        # Базага сактоо
+        ContactMessage.objects.create(
+            name=name, email=email, subject=subject, message=message
+        )
+
+        # Админге (сизге) почтага билдирүү жөнөтүү
+        full_message = f"Жаңы билдирүү келди!\n\nКимден: {name}\nEmail: {email}\nТема: {subject}\nКат: {message}"
+        send_mail(
+            f"Жаңы байланыш: {subject}",
+            full_message,
+            'ishakishakov00@gmail.com', # Жөнөтүүчү
+            ['ishakishakov00@gmail.com'], # Алуучу (өзүңүздүн почтаңызды жазыңыз)
+            fail_silently=False,
+        )
+        messages.success(request, "Сиздин билдирүүңүз ийгиликтүү жөнөтүлдү!")
+        return redirect('/')
+    
+    return render(request, 'registration/contact.html')

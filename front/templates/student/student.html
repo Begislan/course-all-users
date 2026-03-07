@@ -236,9 +236,9 @@
                             </div>
                         </div>
                         
-                        <a href="{% url 'course_view' cour.id %}" class="btn-premium">
-                            Продолжить <i class="bi bi-arrow-right-short" style="font-size: 1.5rem;"></i>
-                        </a>
+                       <a href="{% url 'course_view' cour.id cour.first_lesson_id %}" class="btn-premium">
+    Продолжить...
+</a>
                     </div>
                 </div>
             </div>

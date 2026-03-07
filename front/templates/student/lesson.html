@@ -5,6 +5,7 @@
 
 {% block content %}
 <style>
+    /* Сиздин баштапкы стилдериңиз өзгөртүлгөн жок */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
     :root {
@@ -40,18 +41,15 @@
         transition: all 0.3s ease;
     }
 
-    /* --- Header & Progress --- */
     .dynamic-header {
         position: sticky; top: 0; z-index: 1000;
         background: var(--h-bg); backdrop-filter: blur(12px);
         border-bottom: 1px solid var(--border-color);
     }
     .header-container { width: 95%; max-width: 1600px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; height: 70px; }
-    
     .header-progress-track { position: absolute; bottom: 0; left: 0; width: 100%; height: 3px; background: rgba(0,0,0,0.05); }
     .header-progress-fill { height: 100%; background: var(--success); transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
 
-    /* --- Sidebar & Layout --- */
     .lesson-container-fluid {
         width: 95%; max-width: 1600px; margin: 20px auto;
         display: flex; min-height: 85vh;
@@ -60,7 +58,6 @@
     }
 
     .lessons-sidebar { width: 300px; background: var(--bg-sidebar); border-right: 1px solid var(--border-color); padding: 30px 15px; }
-    
     .lesson-link {
         display: block; padding: 12px 15px; text-decoration: none; color: var(--text-gray);
         border-radius: 12px; margin-bottom: 5px; transition: 0.2s; font-size: 0.9rem;
@@ -68,25 +65,20 @@
     .lesson-link:hover { background: var(--step-bg); color: var(--text-dark); }
     .active-lesson .lesson-link { background: var(--success); color: white !important; font-weight: 600; }
 
-    /* --- Content Area --- */
     .content-area { flex: 1; padding: 40px 5%; overflow-y: auto; }
-    
     .step-btn {
         width: 45px; height: 45px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
         background: var(--step-bg); color: var(--text-gray); text-decoration: none; transition: 0.3s;
     }
     .step-btn.active { background: var(--success); color: white; transform: scale(1.1); }
-
     .media-container { border-radius: 20px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.1); margin: 30px 0; border: 1px solid var(--border-color); }
 
-    /* --- Buttons --- */
     .lesson-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 50px; padding-top: 30px; border-top: 1px solid var(--border-color); }
     .btn-nav { padding: 12px 25px; border-radius: 12px; text-decoration: none; font-weight: 600; transition: 0.3s; display: inline-flex; align-items: center; gap: 8px; }
     .btn-prev { background: var(--step-bg); color: var(--text-dark); }
     .btn-next { background: var(--success); color: white; }
     .btn-next:hover { opacity: 0.9; transform: translateX(5px); }
 
-    /* --- Comments --- */
     .comment-item { border-bottom: 1px solid var(--border-color); padding: 20px 0; }
     .logo-icon { background: var(--success); color: white; display: flex; align-items: center; justify-content: center; border-radius: 10px; font-weight: bold; }
 </style>
@@ -95,29 +87,17 @@
     <div class="header-container">
         <a href="/" class="brand-logo text-decoration-none d-flex align-items-center gap-2">
             <div class="logo-icon" style="width: 35px; height: 35px;">B</div>
-            <div class="logo-text text-dark fw-bold">Bilim<span>Platform</span></div>
+            <div class="logo-text fw-bold">Bilim<span>Platform</span></div>
         </a>
-
         <div class="d-flex align-items-center gap-3">
-            <button id="theme-toggle" class="theme-btn border-0 bg-transparent fs-4" style="color: var(--text-dark);">
-                <i class="bi bi-moon-stars-fill" id="theme-icon"></i>
-            </button>
-            
+            <button id="theme-toggle" class="border-0 bg-transparent fs-4"><i class="bi bi-moon-stars-fill" id="theme-icon"></i></button>
             <div class="user-info d-none d-md-block text-end">
                 <div class="fw-bold small">{{ user.username }}</div>
                 <div class="text-success fw-bold" style="font-size: 11px;">{{ progress_percent }}% Прогресс</div>
             </div>
-
-            {% if user.photo %}
-                <img src="{{ user.photo.url }}" class="header-avatar" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--success);">
-            {% else %}
-                <div class="header-avatar logo-icon" style="width: 40px; height: 40px; font-size: 14px; border-radius: 50%;">{{ user.username|first|upper }}</div>
-            {% endif %}
         </div>
     </div>
-    <div class="header-progress-track">
-        <div class="header-progress-fill" style="width: {{ progress_percent }}%;"></div>
-    </div>
+    <div class="header-progress-track"><div class="header-progress-fill" style="width: {{ progress_percent }}%;"></div></div>
 </header>
 
 <div class="lesson-container-fluid">
@@ -126,126 +106,115 @@
         <div class="mt-3">
             {% for lesson in lessons %}
                 <div class="{% if lesson.id == selected_lesson.id %}active-lesson{% endif %}">
-                    <a href="{% url 'course_lesson' course.id lesson.id %}" class="lesson-link">
-                        {{ forloop.counter }}. {{ lesson.title }}
-                    </a>
+                    <a href="{% url 'course_lesson' course.id lesson.id %}" class="lesson-link">{{ forloop.counter }}. {{ lesson.title }}</a>
                 </div>
             {% endfor %}
         </div>
     </aside>
 
     <main class="content-area">
-        <div class="content-max-width">
-            {% if selected_lesson %}
-                <div class="steps-nav d-flex justify-content-center gap-3 mb-5">
-                    {% for content in contents %}
-                        <a href="?step={{ forloop.counter0 }}" 
-                           class="step-btn {% if forloop.counter0 == step_index %}active{% endif %}"
-                           title="{{ content.content_type|title }}">
-                            {% if content.content_type == 'video' %}
-                                <i class="bi bi-play-btn-fill"></i>
-                            {% elif content.content_type == 'text' %}
-                                <i class="bi bi-text-paragraph"></i>
-                            {% elif content.content_type == 'image' %}
-                                <i class="bi bi-image"></i>
-                            {% else %}
-                                <i class="bi bi-box"></i>
-                            {% endif %}
-                        </a>
+        {% if selected_lesson %}
+            <div class="steps-nav d-flex justify-content-center gap-3 mb-5">
+                {% for content in contents %}
+                    <a href="?step={{ forloop.counter0 }}" class="step-btn {% if forloop.counter0 == step_index %}active{% endif %}">
+                        {% if content.content_type == 'video' %}<i class="bi bi-play-btn-fill"></i>
+                        {% elif content.content_type == 'text' %}<i class="bi bi-text-paragraph"></i>
+                        {% else %}<i class="bi bi-image"></i>{% endif %}
+                    </a>
+                {% endfor %}
+            </div>
+
+            <h1 class="mb-4 fw-bold">{{ selected_lesson.title }}</h1>
+
+            <div class="lesson-body">
+                {% if current_content %}
+                    <div class="content-block mb-4">
+                        {% if current_content.content_type == 'text' %}
+                            <div class="content-text fs-5" style="white-space: pre-wrap;">{{ current_content.content_data }}</div>
+                        {% elif current_content.content_type == 'image' %}
+                            <div class="media-container"><img src="{{ current_content.content_data }}" class="img-fluid w-100"></div>
+                        {% elif current_content.content_type == 'video' %}
+                            <div class="ratio ratio-16x9"><iframe src="{{ current_content.content_data|youtube_embed_url }}" allowfullscreen></iframe></div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+
+                {% if has_quiz %}
+                    <div class="glass-card mt-5 p-4 text-center text-white" style="background: rgba(255, 255, 255, 0.1); border-radius: 20px;">
+                        <h4><i class="bi bi-mortarboard-fill"></i> Сабак аяктады!</h4>
+                        <p>Билимиңизди текшерүү үчүн тесттен өтүңүз.</p>
+                        <a href="{% url 'take_quiz' selected_lesson.id %}" class="btn btn-warning rounded-pill">Тестти баштоо</a>
+                    </div>
+                {% endif %}
+
+                <div class="comments-section mt-5 border-top pt-5">
+                    <h4 class="fw-bold mb-4">Талкуулоо ({{ comments|length|default:"0" }})</h4>
+                    <form method="POST" class="mb-5">
+                        {% csrf_token %}
+                        <textarea name="comment" class="form-control mb-3" rows="3" placeholder="Ой-пикириңизди калтырыңыз..."></textarea>
+                        <button type="submit" class="btn btn-success px-4">Жөнөтүү</button>
+                    </form>
+                    {% for comment in comments %}
+                        <div class="comment-item d-flex gap-3">
+                            <div class="logo-icon" style="width: 45px; height: 45px;">{{ comment.user.username|first|upper }}</div>
+                            <div>
+                                <div class="fw-bold">{{ comment.user.username }}</div>
+                                <p class="text-muted">{{ comment.text }}</p>
+                            </div>
+                        </div>
                     {% endfor %}
                 </div>
 
-                <h1 class="mb-4 fw-bold h2">{{ selected_lesson.title }}</h1>
-
-                <div class="lesson-body">
-                    {% if current_content %}
-                        <div class="content-block">
-                            {% if current_content.content_type == 'text' %}
-                                <div class="content-text fs-5" style="white-space: pre-wrap; line-height: 1.8; color: var(--text-dark);">{{ current_content.content_data }}</div>
-                            {% elif current_content.content_type == 'image' %}
-                                <div class="media-container">
-                                    <img src="{% if current_content.image %}{{ current_content.image.url }}{% else %}{{ current_content.content_data }}{% endif %}" class="img-fluid w-100">
-                                </div>
-                            {% elif current_content.content_type == 'video' %}
-                                <div class="media-container shadow-lg">
-                                    {% if "youtube.com" in current_content.content_data or "youtu.be" in current_content.content_data %}
-                                        <div class="ratio ratio-16x9">
-                                            <iframe src="{{ current_content.content_data|youtube_embed_url }}" allowfullscreen></iframe>
-                                        </div>
-                                    {% else %}
-                                        <video controls class="w-100"><source src="{{ current_content.content_data }}" type="video/mp4"></video>
-                                    {% endif %}
-                                </div>
-                            {% endif %}
-                        </div>
-                    {% endif %}
-
-                    <div class="lesson-footer">
-                        <div>
-                            {% if step_index > 0 %}
-                                <a href="?step={{ step_index|add:-1 }}" class="btn-nav btn-prev"><i class="bi bi-chevron-left"></i> Артка</a>
-                            {% elif prev_lesson %}
-                                <a href="{% url 'course_lesson' course.id prev_lesson.id %}" class="btn-nav btn-prev">Мурунку сабак</a>
-                            {% endif %}
-                        </div>
-                        <div>
-                            {% if step_index|add:1 < contents|length %}
-                                <a href="?step={{ step_index|add:1 }}" class="btn-nav btn-next">Кийинки кадам <i class="bi bi-chevron-right"></i></a>
-                            {% elif next_lesson %}
-                                <a href="{% url 'course_lesson' course.id next_lesson.id %}" class="btn-nav btn-next">Кийинки сабак <i class="bi bi-chevron-right"></i></a>
-                            {% else %}
-                                <a href="{% url 'student' %}" class="btn-nav btn-next bg-primary text-white">Курсту аяктоо <i class="bi bi-check2-all"></i></a>
-                            {% endif %}
-                        </div>
+                <div class="lesson-footer">
+                    <div>{% if step_index > 0 %}<a href="?step={{ step_index|add:-1 }}" class="btn-nav btn-prev">Артка</a>{% endif %}</div>
+                    <div>
+                        {% if step_index|add:1 < contents|length %}
+                            <a href="?step={{ step_index|add:1 }}" class="btn-nav btn-next">Кийинки кадам</a>
+                        {% elif next_lesson %}
+                            <a href="{% url 'course_lesson' course.id next_lesson.id %}" class="btn-nav btn-next">Кийинки сабак</a>
+                        {% endif %}
                     </div>
                 </div>
-
-                <div class="comments-section mt-5">
-                    <h4 class="fw-bold mb-4">Суроолор жана талкуулоо ({{ comments|length|default:"0" }})</h4>
-                    <div class="comment-form-card mb-5">
-                        <form method="POST">
-                            {% csrf_token %}
-                            <textarea name="comment" class="form-control mb-3 border-0 shadow-sm" rows="3" placeholder="Ой-пикириңизди же сурооңузду калтырыңыз..." style="border-radius: 15px; background: var(--bg-body); color: var(--text-dark);"></textarea>
-                            <div class="text-end">
-                                <button type="submit" class="btn btn-success px-4 fw-bold" style="border-radius: 10px;">Жөнөтүү</button>
-                            </div>
-                        </form>
-                    </div>
-
-                    <div class="comments-list">
-                        {% for comment in comments %}
-                            <div class="comment-item d-flex gap-3">
-                                <div class="logo-icon flex-shrink-0" style="width: 45px; height: 45px; border-radius: 12px;">{{ comment.user.username|first|upper }}</div>
-                                <div>
-                                    <div class="fw-bold">{{ comment.user.username }} <span class="ms-2 opacity-50 fw-normal small">{{ comment.created_at|timesince }} мурун</span></div>
-                                    <p class="mt-2 opacity-75">{{ comment.text }}</p>
-                                </div>
-                            </div>
-                        {% empty %}
-                            <p class="text-center text-muted">Азырынча комментарийлер жок. Биринчи болуп жазыңыз!</p>
-                        {% endfor %}
-                    </div>
-                </div>
-            {% endif %}
-        </div>
+            </div>
+        {% endif %}
     </main>
 </div>
 
 <script>
-    const themeToggle = document.getElementById('theme-toggle');
-    const themeIcon = document.getElementById('theme-icon');
     const body = document.body;
-
-    if (localStorage.getItem('theme') === 'dark') {
-        body.classList.add('dark-theme');
-        themeIcon.classList.replace('bi-moon-stars-fill', 'bi-sun-fill');
-    }
-
-    themeToggle.addEventListener('click', () => {
+    const themeIcon = document.getElementById('theme-icon');
+    body.classList.add('dark-theme');
+    localStorage.setItem('theme', 'dark');
+    document.getElementById('theme-toggle').addEventListener('click', () => {
         body.classList.toggle('dark-theme');
         const isDark = body.classList.contains('dark-theme');
-        localStorage.setItem('theme', isDark ? 'dark' : 'light');
         themeIcon.classList.replace(isDark ? 'bi-moon-stars-fill' : 'bi-sun-fill', isDark ? 'bi-sun-fill' : 'bi-moon-stars-fill');
+    });
+     // AJAX комментарий
+    document.getElementById('comment-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        fetch(window.location.href, {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(response => {
+            if (response.ok) {
+                const text = document.getElementById('comment-text').value;
+                const list = document.getElementById('comments-list');
+                const count = document.getElementById('comment-count');
+                
+                list.insertAdjacentHTML('afterbegin', `
+                    <div class="comment-item d-flex gap-3 mt-3">
+                        <div class="logo-icon" style="width: 45px; height: 45px;">{{ user.username|first|upper }}</div>
+                        <div><div class="fw-bold">{{ user.username }}</div><p class="text-muted">${text}</p></div>
+                    </div>
+                `);
+                count.innerText = parseInt(count.innerText) + 1;
+                document.getElementById('comment-text').value = '';
+            }
+        });
     });
 </script>
 {% endblock %}
