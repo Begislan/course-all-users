@@ -1,0 +1,15 @@
+<form method="POST">
+    {% csrf_token %}
+    <input type="text" name="question_text" placeholder="Суроону киргизиңиз" class="form-control mb-3" required>
+    
+    {% for i in "1234" %}
+    <div class="input-group mb-2">
+        <input type="text" name="choice_{{ i }}" class="form-control" placeholder="Жооп варианты {{ i }}">
+        <div class="input-group-text">
+            <input type="checkbox" name="is_correct_{{ i }}"> Туура
+        </div>
+    </div>
+    {% endfor %}
+    
+    <button type="submit" class="btn btn-primary">Суроону кошуу</button>
+</form>

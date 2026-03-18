@@ -1,0 +1,75 @@
+{% extends "front/base.html" %}
+{% block content %}
+<div class="container mt-5">
+    <h2>"{{ lesson.title }}" сабагына тест кошуу</h2>
+    <form method="POST" id="quiz-form">
+        {% csrf_token %}
+        
+        <div class="card p-4 shadow-sm mb-4">
+            <div class="mb-3">
+                <label>Тесттин аталышы</label>
+                <input type="text" name="title" class="form-control" required placeholder="Мисалы: Гитхаб боюнча жыйынтык тест">
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <label>Өтүү пайызы (%)</label>
+                    <input type="number" name="pass_percentage" value="60" class="form-control">
+                </div>
+                <div class="col-md-6">
+                    <label>Убакыт чектөөсү (минут)</label>
+                    <input type="number" name="time_limit" value="30" class="form-control">
+                </div>
+            </div>
+        </div>
+
+        <div id="questions-container">
+            <div class="question-block card p-4 shadow-sm mb-3 border-primary">
+                <h5>1-суроо</h5>
+                <textarea name="q_text_0" class="form-control mb-3" placeholder="Суроону жазыңыз" required></textarea>
+                
+                <h6>Варианттар (туурасын белгилеңиз):</h6>
+                {% for i in "0123" %}
+                <div class="input-group mb-2">
+                    <div class="input-group-text">
+                        <input type="radio" name="correct_for_q_0" value="{{ i }}" {% if i == "0" %}checked{% endif %}>
+                    </div>
+                    <input type="text" name="choice_q_0_{{ i }}" class="form-control" placeholder="Вариант {{ i|add:1 }}" required>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <button type="button" class="btn btn-outline-primary mb-4" onclick="addQuestion()">
+            <i class="bi bi-plus-circle"></i> Дагы суроо кошуу
+        </button>
+
+        <div class="d-grid">
+            <button type="submit" class="btn btn-success btn-lg">Тестти толук сактоо</button>
+        </div>
+    </form>
+</div>
+
+<script>
+let questionCount = 1;
+function addQuestion() {
+    const container = document.getElementById('questions-container');
+    const newQuestion = document.createElement('div');
+    newQuestion.className = 'question-block card p-4 shadow-sm mb-3 border-primary';
+    newQuestion.innerHTML = `
+        <h5>${questionCount + 1}-суроо</h5>
+        <textarea name="q_text_${questionCount}" class="form-control mb-3" placeholder="Суроону жазыңыз" required></textarea>
+        <h6>Варианттар:</h6>
+        ${[0,1,2,3].map(i => `
+            <div class="input-group mb-2">
+                <div class="input-group-text">
+                    <input type="radio" name="correct_for_q_${questionCount}" value="${i}" ${i==0 ? 'checked' : ''}>
+                </div>
+                <input type="text" name="choice_q_${questionCount}_${i}" class="form-control" placeholder="Вариант ${i+1}" required>
+            </div>
+        `).join('')}
+    `;
+    container.appendChild(newQuestion);
+    questionCount++;
+}
+</script>
+{% endblock %}

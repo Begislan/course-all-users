@@ -89,4 +89,15 @@ class Comment(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ['-created_at']
+        ordering = ['-created_at'] 
+# QuizAttempt моделин төмөнкүдөй өзгөртүңүз:
+class QuizAttempt(models.Model):
+    # Сиздин долбоордо CustomUser колдонулат, ошондуктан бул жерди оңдойбуз:
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='quiz_attempts')
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='attempts')
+    score = models.FloatField("Упай (%)")
+    is_passed = models.BooleanField("Өттү", default=False)
+    completed_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.quiz.title} ({self.score}%)"

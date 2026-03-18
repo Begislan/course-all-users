@@ -1,10 +1,10 @@
-from django.http import Http404
+from django.http import Http404 
 from django.http import HttpResponseForbidden
 from accounts.models import CustomUser as User, CustomUser
 from django.contrib.auth.decorators import user_passes_test
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, render, redirect
-from .models import Course, Lesson, Content ,  Quiz, Question, Choice, UserProgress , Comment
+from .models import Course, Lesson, Content ,  Quiz, Question, Choice, UserProgress , Comment , QuizAttempt
 from functools import wraps
 from django.contrib.auth.decorators import login_required
 
@@ -274,70 +274,93 @@ def student(request):
 @role_required('student')
 def course_view(request, course_id, lesson_id=None):
     course = get_object_or_404(Course, id=course_id)
+    # Сабактарды ирети менен алуу
     lessons = list(course.lessons.all().order_by('order'))
     
     if not lessons:
         return render(request, 'student/lesson.html', {'course': course, 'lessons': []})
+
+    # 1. КУЛПУЛОО ЛОГИКАСЫ (Locking system)
+    for i, lesson in enumerate(lessons):
+        if i == 0:
+            lesson.is_locked = False  # Биринчи сабак дайыма ачык
+        else:
+            prev_lesson = lessons[i-1]
+            if hasattr(prev_lesson, 'quiz'):
+                # Тесттен өткөнүн текшерүү (мисалы, 60%дан жогору упай алса)
+                passed = QuizAttempt.objects.filter(
+                    user=request.user, 
+                    quiz=prev_lesson.quiz, 
+                    score__gte=prev_lesson.quiz.pass_percentage
+                ).exists()
+                lesson.is_locked = not passed
+            else:
+                # Эгер мурунку сабакта тест жок болсо, сабак ачык
+                lesson.is_locked = False
 
     # Тандалган сабакты аныктоо
     if lesson_id:
         selected_lesson = next((l for l in lessons if l.id == int(lesson_id)), lessons[0])
     else:
         selected_lesson = lessons[0]
+        
+    # Эгер окуучу кулпуланган сабакка шилтеме аркылуу кирүүгө аракет кылса, 
+    # аны ачык турган акыркы сабакка кайтаруу:
+    if selected_lesson.is_locked:
+        return redirect('course_view', course_id=course.id)
 
-    # ТЕСТ БАРБЫ ЖЕ ЖОК ПУ ТЕКШЕРҮҮ (Ушул жерде кошулду)
+    # Тест барбы же жокпу
     has_quiz = hasattr(selected_lesson, 'quiz')
 
-    # Прогрессти жазуу
+    # Прогрессти белгилөө
     UserProgress.objects.get_or_create(user=request.user, lesson=selected_lesson)
 
-    # Контенттерди алуу
+    # Контенттер жана Кадамдар (Steps)
     contents = list(selected_lesson.contents.all().order_by('order'))
-    
-    # Кадам индекси
-    try:
-        step_index = int(request.GET.get('step', 0))
-    except (ValueError, TypeError):
-        step_index = 0
-    
+    step_index = int(request.GET.get('step', 0))
     if step_index < 0: step_index = 0
     if contents and step_index >= len(contents): step_index = len(contents) - 1
     current_content = contents[step_index] if contents else None
 
-    # Навигация
-    current_lesson_index = lessons.index(selected_lesson)
-    prev_lesson = lessons[current_lesson_index - 1] if current_lesson_index > 0 else None
-    next_lesson = lessons[current_lesson_index + 1] if current_lesson_index < len(lessons) - 1 else None
-
-    # Прогресс пайызы
+    # Навигация (Кийинки/Артка)
+    current_idx = lessons.index(selected_lesson)
+    next_lesson = lessons[current_idx + 1] if current_idx < len(lessons) - 1 else None
+    
+    # Прогресс пайызы (Бардык сабактар / бүткөн сабактар)
     total_l = len(lessons)
     done_l = UserProgress.objects.filter(user=request.user, lesson__course=course, is_completed=True).count()
     progress_percent = int((done_l / total_l) * 100) if total_l > 0 else 0
+
+    # КОММЕНТАРИЙЛЕР (AJAX колдоосу менен)
+    if request.method == 'POST':
+        text = request.POST.get('comment')
+        if text:
+            comment = Comment.objects.create(lesson=selected_lesson, user=request.user, text=text)
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'status': 'success',
+                    'user': comment.user.username,
+                    'text': comment.text,
+                    'initial': comment.user.username[0].upper()
+                })
+            return redirect(request.path)
 
     context = {
         'course': course,
         'lessons': lessons,
         'selected_lesson': selected_lesson,
-        'has_quiz': has_quiz,  # Бул шаблондогу if has_quiz үчүн керек!
+        'has_quiz': has_quiz,
+        'quiz': getattr(selected_lesson, 'quiz', None),
         'contents': contents,
         'current_content': current_content,
         'step_index': step_index,
-        'prev_lesson': prev_lesson,
         'next_lesson': next_lesson,
         'comments': selected_lesson.comments.all().order_by('-created_at'),
         'progress_percent': progress_percent,
     }
-    
-    # Эгер POST болсо, комментарий сактоо логикасы
-    if request.method == 'POST':
-        text = request.POST.get('comment')
-        if text:
-            Comment.objects.create(lesson=selected_lesson, user=request.user, text=text)
-            return redirect(request.path)
-
     return render(request, 'student/lesson.html', context)
-
 # --- ТЕСТТИ АЛУУ ---
+# views.py ичиндеги POST логикасын толуктайбыз
 @login_required
 @role_required('student')
 def take_quiz(request, lesson_id):
@@ -352,23 +375,121 @@ def take_quiz(request, lesson_id):
         for question in questions:
             selected_choice_id = request.POST.get(f'question_{question.id}')
             if selected_choice_id:
-                choice = get_object_or_404(Choice, id=selected_choice_id)
-                if choice.is_correct:
+                is_correct = Choice.objects.filter(
+                    id=selected_choice_id, 
+                    question=question, 
+                    is_correct=True
+                ).exists()
+                if is_correct:
                     correct_answers += 1
 
-        score_percentage = (correct_answers / total_questions) * 100 if total_questions > 0 else 0
-        is_passed = score_percentage >= quiz.pass_percentage
+        score_percentage = (correct_answers / total_questions * 100) if total_questions > 0 else 0
+        
+        # --- ЭҢ МААНИЛҮҮ ЖЕР: QuizAttempt сактоо ---
+        QuizAttempt.objects.create(
+            user=request.user,
+            quiz=quiz,
+            score=score_percentage
+        )
 
         # Прогрессти жаңыртуу
-        progress, created = UserProgress.objects.get_or_create(user=request.user, lesson=lesson)
-        progress.score = score_percentage
-        progress.is_completed = is_passed
-        progress.save()
+        is_passed = score_percentage >= quiz.pass_percentage
+        UserProgress.objects.update_or_create(
+            user=request.user, 
+            lesson=lesson,
+            defaults={
+                'score': score_percentage,
+                'is_completed': is_passed # Эгер упай жетсе True болот
+            }
+        )
 
         return render(request, 'teacher/quiz_result.html', {
+            'score': score_percentage, 
             'quiz': quiz,
-            'score': score_percentage,
-            'is_passed': is_passed
+            'is_passed': is_passed, # Шаблондо колдонуу үчүн
+            'correct_answers': correct_answers,
+            'total_questions': total_questions
         })
 
-    return render(request, 'teacher/quiz.html', {'quiz': quiz, 'questions': questions})
+    return render(request, 'teacher/quiz.html', {
+        'quiz': quiz, 
+        'questions': questions,
+        'lesson': lesson
+    })
+@login_required
+@role_required('teacher')
+def add_quiz(request, lesson_id):
+    lesson = get_object_or_404(Lesson, id=lesson_id)
+    
+    # 1. Эгер бул сабакта тест бар болсо, UNIQUE катасын болтурбоо үчүн текшеребиз
+    if hasattr(lesson, 'quiz'):
+        return redirect('lesson_detail', course_id=lesson.course.id, lesson_id=lesson.id)
+
+    if request.method == 'POST':
+        # Тесттин негизги маалыматтарын алуу
+        title = request.POST.get('title')
+        pass_percentage = request.POST.get('pass_percentage', 60)
+        time_limit = request.POST.get('time_limit', 30)
+        
+        # 2. Тестти түзүү
+        quiz = Quiz.objects.create(
+            lesson=lesson,
+            title=title,
+            pass_percentage=pass_percentage,
+            time_limit=time_limit
+        )
+
+        # 3. Суроолорду динамикалык түрдө сактоо
+        # Шаблондогу 'q_text_0', 'q_text_1' ж.б. алуу үчүн индекс колдонобуз
+        q_index = 0
+        while f'q_text_{q_index}' in request.POST:
+            q_text = request.POST.get(f'q_text_{q_index}')
+            
+            if q_text:
+                # Суроону сактоо
+                question = Question.objects.create(quiz=quiz, text=q_text)
+                
+                # Туура жооптун индекси (0, 1, 2 же 3)
+                correct_idx = request.POST.get(f'correct_for_q_{q_index}')
+                
+                # 4. Бул суроонун 4 вариантын сактоо
+                for c_index in range(4):
+                    choice_text = request.POST.get(f'choice_q_{q_index}_{c_index}')
+                    if choice_text:
+                        Choice.objects.create(
+                            question=question,
+                            text=choice_text,
+                            is_correct=(str(c_index) == correct_idx)
+                        )
+            q_index += 1
+
+        # Баары сакталгандан кийин сабактын барагына кайтабыз
+        return redirect('lesson_detail', course_id=lesson.course.id, lesson_id=lesson.id)
+
+    return render(request, 'teacher/add_quiz.html', {'lesson': lesson})
+
+@login_required
+@role_required('teacher')
+def add_question(request, quiz_id):
+    quiz = get_object_or_404(Quiz, id=quiz_id)
+    
+    if request.method == 'POST':
+        question_text = request.POST.get('question_text')
+        
+        # Суроону түзүү
+        if question_text:
+            question = Question.objects.create(quiz=quiz, text=question_text)
+            
+            # Жоопторду сактоо (4 вариант деп эсептейли)
+            for i in range(1, 5):
+                choice_text = request.POST.get(f'choice_{i}')
+                # radio баскычынан келген маанини текшерүү
+                is_correct = (request.POST.get('is_correct') == str(i))
+                
+                if choice_text:
+                    Choice.objects.create(question=question, text=choice_text, is_correct=is_correct)
+        
+        # "Кийинки суроо" басылса кайра ушул эле баракка жиберет
+        return redirect('add_question', quiz_id=quiz.id)
+            
+    return render(request, 'teacher/add_question.html', {'quiz': quiz})
