@@ -24,6 +24,8 @@
     .timer-badge { font-family: 'Courier New', monospace; font-size: 1.2rem; color: #fbbf24; }
 </style>
 
+<canvas id="snapshot-canvas" style="display:none;"></canvas>
+
 <div id="camera-box">
     <video id="webcam" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
 </div>
@@ -59,11 +61,14 @@
         </form>
     </div>
 </div>
+
 <script>
-const video = document.getElementById('webcam');
+    const video = document.getElementById('webcam');
     const form = document.getElementById('quiz-form');
+    const canvas = document.getElementById('snapshot-canvas');
     let stream = null;
 
+    // 1. Камераны иштетүү
     async function setupCamera() {
         try {
             stream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -75,23 +80,49 @@ const video = document.getElementById('webcam');
     }
     setupCamera();
 
-    // 1. Камеранын абалын үзгүлтүксүз текшерүү
+    // 2. Сүрөт тартуу жана Серверге жөнөтүү (Прокторинг)
+    function takeSnapshot() {
+        if (!stream) return;
+
+        const context = canvas.getContext('2d');
+        canvas.width = 640;
+        canvas.height = 480;
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        // Сүрөттү Base64 форматына айлантуу
+        const imageData = canvas.toDataURL('image/jpeg', 0.9);
+
+        // Серверге (save_quiz_screenshot) POST сурамын жөнөтүү
+        fetch("{% url 'save_quiz_screenshot' lesson.id %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: JSON.stringify({ image: imageData })
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log("Сүрөт сакталды:", data.status);
+        })
+        .catch(err => console.error("Сүрөт жөнөтүүдө ката:", err));
+    }
+
+    // Ар бир 15 секунд сайын сүрөт тартып турат
+    setInterval(takeSnapshot, 7000);
+
+    // 3. Камеранын абалын жана жабык экенин текшерүү
     setInterval(() => {
         if (!stream) return;
-        
         const track = stream.getVideoTracks()[0];
         
-        // Камера өчүрүлсө же уруксат алынбай калса
         if (!track || !track.enabled || track.readyState === 'ended') {
             alert("Камера өчүрүлдү! Тест аяктады.");
             form.submit();
         }
 
-        // 2. Камера жабылганын аныктоо (физикалык шторка)
-        const canvas = document.createElement('canvas');
-        canvas.width = 64; 
-        canvas.height = 64;
         const ctx = canvas.getContext('2d');
+        canvas.width = 64; canvas.height = 64;
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
 
@@ -101,19 +132,14 @@ const video = document.getElementById('webcam');
         }
         let average = sum / (data.length / 4);
 
-        // Консоль аркылуу маанини текшерип, өзүңүзгө ылайыктуусун коюңуз
-        // console.log("Avg Brightness:", average); 
-
-        // Эгер орточо жарыктык 3төн төмөн (кара) же 250дөн жогору (өтө ачык ак) болсо
-        // Эгер камераңыз жабылганда боз түс көрсөтсө, чекти (threshold) өзгөртүңүз (мисалы 20)
-        if (average < 90 || average > 220) { 
+        if (average < 70 || average > 245) { 
              alert("Камера жабык экендиги аныкталды!");
              form.submit();
         }
-    }, 2000);
+    }, 3000);
 
-    // 3. Таймер жана Visibility
-    let timeLeft = {{ quiz.time_limit|default:30 }} * 60;
+    // 4. Таймер
+    let timeLeft = {{ quiz.time_limit|default:5 }} * 60;
     const timerElem = document.getElementById('timer');
     const countdown = setInterval(() => {
         let min = Math.floor(timeLeft / 60);
@@ -123,6 +149,7 @@ const video = document.getElementById('webcam');
         timeLeft--;
     }, 1000);
 
+    // 5. Башка жакка өтүүнү чектөө (Visibility)
     document.addEventListener("visibilitychange", () => {
         if (document.hidden) { 
             alert("Тест учурунда браузерден чыгууга болбойт!");

@@ -5,9 +5,10 @@ from django.core.exceptions import ValidationError
 # Мазмундун түрлөрү
 CONTENT_TYPES = (
     ('text', 'Текст'),
-    ('image', 'Сүрөт'),
-    ('video', 'Видео'),
-    ('file', 'Файл'),
+    ('image', 'Сүрөт (Файл)'),
+    ('video', 'Видео (YouTube шилтеме)'),
+    ('video_file', 'Видео (MP4 Файл)'),
+    ('file', 'Документ/Файл'),
 )
 
 class Course(models.Model):
@@ -32,7 +33,6 @@ class Lesson(models.Model):
     def __str__(self):
         return f"{self.order}. {self.title}"
 
-# Тест системасы
 class Quiz(models.Model):
     lesson = models.OneToOneField(Lesson, on_delete=models.CASCADE, related_name='quiz')
     title = models.CharField("Тесттин аталышы", max_length=255)
@@ -57,18 +57,28 @@ class Choice(models.Model):
     def __str__(self):
         return self.text
 
-# Мазмун (Контент)
 class Content(models.Model):
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name='contents')
-    content_type = models.CharField("Контенттин түрү", max_length=10, choices=CONTENT_TYPES)
-    content_data = models.TextField("Маалымат / Шилтеме / Текст", blank=True)
-    file = models.FileField("Файл", upload_to='content_files/', blank=True, null=True)
+    content_type = models.CharField("Контенттин түрү", max_length=15, choices=CONTENT_TYPES)
+    content_data = models.TextField("Текст же Видео шилтемеси", blank=True, null=True)
+    file = models.FileField("Компьютерден жүктөө", upload_to='lesson_contents/', blank=True, null=True)
     order = models.PositiveIntegerField("Тартиби", default=0)
 
     class Meta:
         ordering = ['order']
+        verbose_name = "Сабактын мазмуну"
+        verbose_name_plural = "Сабактын мазмундары"
 
-# Прогресс жана Тесттин жыйынтыктары
+    def __str__(self):
+        return f"{self.lesson.title} - {self.get_content_type_display()} ({self.order})"
+
+    def clean(self):
+        # image_244157.jpg скриншотундагы логика боюнча оңдолду
+        if self.content_type == 'text' and not self.content_data:
+            raise ValidationError("Текст түрү тандалса, текст жазылышы керек.")
+        if self.content_type in ['image', 'file', 'video_file'] and not self.file:
+            raise ValidationError(f"{self.get_content_type_display()} үчүн файл тандалышы керек.")
+
 class UserProgress(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='progress')
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
@@ -88,16 +98,33 @@ class Comment(models.Model):
     text = models.TextField("Комментарий")
     created_at = models.DateTimeField(auto_now_add=True)
 
-    class Meta:
-        ordering = ['-created_at'] 
-# QuizAttempt моделин төмөнкүдөй өзгөртүңүз:
+    def __str__(self):
+        return f"{self.user.username}: {self.text[:20]}"
+
 class QuizAttempt(models.Model):
-    # Сиздин долбоордо CustomUser колдонулат, ошондуктан бул жерди оңдойбуз:
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='quiz_attempts')
-    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='attempts')
+    quiz = models.ForeignKey('Quiz', on_delete=models.CASCADE, related_name='attempts')
     score = models.FloatField("Упай (%)")
     is_passed = models.BooleanField("Өттү", default=False)
     completed_at = models.DateTimeField(auto_now_add=True)
 
+    def save(self, *args, **kwargs):
+        # Сактоо алдында упай жетиштүүбү же жокпу автоматтык түрдө текшерет
+        if self.score >= self.quiz.pass_percentage:
+            self.is_passed = True
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.user.username} - {self.quiz.title} ({self.score}%)"
+class QuizSessionImage(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    lesson = models.ForeignKey('Lesson', on_delete=models.CASCADE)
+    image = models.ImageField(upload_to='proctoring_shots/%Y/%m/%d/')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Прокторинг сүрөтү"
+        verbose_name_plural = "Прокторинг сүрөттөрү"
+
+    def __str__(self):
+        return f"{self.user.username} - {self.lesson.title} ({self.created_at.strftime('%H:%M:%S')})"

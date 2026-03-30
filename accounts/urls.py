@@ -9,6 +9,7 @@ from .views import (
     edit_profile
 )
 
+
 urlpatterns = [
     # Каттоо
     path('register/', register_view, name='signup'),

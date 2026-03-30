@@ -1,13 +1,20 @@
-from django.http import Http404 
-from django.http import HttpResponseForbidden
-from accounts.models import CustomUser as User, CustomUser
-from django.contrib.auth.decorators import user_passes_test
+import json
+import base64
+import requests # Бул сүрөттү Telegramга учурат
+from django.utils.timezone import now
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse, Http404, HttpResponseForbidden
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
-from django.shortcuts import get_object_or_404, render, redirect
-from .models import Course, Lesson, Content ,  Quiz, Question, Choice, UserProgress , Comment , QuizAttempt
 from functools import wraps
-from django.contrib.auth.decorators import login_required
-
+from django.core.files.base import ContentFile
+# Сиздин моделдериңиз (UserProgress жана QuizAttempt бул жерде болушу шарт)
+from .models import (
+    Course, Lesson, Content, Quiz, Question, 
+    Choice, UserProgress, Comment, QuizAttempt , QuizSessionImage
+)
+from accounts.models import CustomUser as User, CustomUser 
+from django.conf import settings
 def role_required(role):
     """
     Декоратор для проверки роли пользователя.
@@ -150,22 +157,34 @@ def delete_lesson(request, lesson_id):
 @role_required('teacher')
 @login_required
 def add_content(request, lesson_id):
-    lesson = get_object_or_404(Lesson, id=lesson_id)
+    # Коопсуздук үчүн: сабак бул мугалимге тиешелүү курстун ичинде экенин текшеребиз
+    lesson = get_object_or_404(Lesson, id=lesson_id, course__author=request.user)
+    
     if request.method == 'POST':
         content_type = request.POST.get('content_type')
-        content_data = request.POST.get('content_data')
+        content_data = request.POST.get('content_data', '')
         file = request.FILES.get('file')
         order = request.POST.get('order') or 0
 
-        Content.objects.create(
-            lesson=lesson,
-            content_type=content_type,
-            content_data=content_data if content_type != 'file' else '',
-            file=file if content_type == 'file' else None,
-            order=order
-        )
-        return redirect('lesson_detail', course_id=lesson.course.id, lesson_id=lesson.id)
+        # Сиздин моделиңиздеги clean() методуна шайкеш келтирүү:
+        # Эгер тип текст же видео (youtube) болбосо, анда файлды сактайбыз
+        file_types = ['image', 'file', 'video_file']
+        
+        try:
+            Content.objects.create(
+                lesson=lesson,
+                content_type=content_type,
+                content_data=content_data,
+                file=file if content_type in file_types else None,
+                order=order
+            )
+            # URL атын текшериңиз: сиздин urls.py'де 'lesson_detail' же 'teacher_all' болушу мүмкүн
+            return redirect('lesson_detail', course_id=lesson.course.id, lesson_id=lesson.id)
+        except Exception as e:
+            messages.error(request, f"Ката кетти: {e}")
+            return redirect('teacher_all', course_id=lesson.course.id, lesson_id=lesson.id)
 
+    return redirect('courses')
 @role_required('teacher')
 @login_required
 def edit_content(request, content_id):
@@ -255,17 +274,31 @@ def admin_courses(request):
 @login_required
 @role_required('student')
 def student(request):
+    # Бардык курстарды базадан алабыз
     course_list = Course.objects.all()
     
     for cour in course_list:
-        total_lessons = cour.lessons.count()
-        # Курстун биринчи сабагын алуу (url түзүү үчүн керек)
-        first_lesson = cour.lessons.order_by('order').first()
+        # 1. Курстун сабактарынын жалпы санын алуу
+        lessons = cour.lessons.all().order_by('order')
+        total_lessons = lessons.count()
+        
+        # 2. Биринчи сабакты алуу (URL ката бербеши үчүн)
+        first_lesson = lessons.first()
         cour.first_lesson_id = first_lesson.id if first_lesson else None
         
-        # ... калган прогресс эсептөө логикаңыз ...
-        completed_count = UserProgress.objects.filter(user=request.user, lesson__course=cour).count()
-        cour.progress_percent = int((completed_count / total_lessons) * 100) if total_lessons > 0 else 0
+        # 3. Прогрессти эсептөө (is_completed=True болгондорун гана санайбыз)
+        if total_lessons > 0:
+            completed_count = UserProgress.objects.filter(
+                user=request.user, 
+                lesson__course=cour, 
+                is_completed=True # Сабак чындыгында бүткөнүн текшерүү
+            ).count()
+            
+            # Процентти эсептөө
+            percent = (completed_count / total_lessons) * 100
+            cour.progress_percent = int(percent)
+        else:
+            cour.progress_percent = 0
             
     return render(request, 'student/student.html', {'course': course_list})
 # --- САБАКТЫ КӨРҮҮ ЖАНА ПРОГРЕСС ---
@@ -384,31 +417,55 @@ def take_quiz(request, lesson_id):
                     correct_answers += 1
 
         score_percentage = (correct_answers / total_questions * 100) if total_questions > 0 else 0
-        
-        # --- ЭҢ МААНИЛҮҮ ЖЕР: QuizAttempt сактоо ---
-        QuizAttempt.objects.create(
-            user=request.user,
-            quiz=quiz,
-            score=score_percentage
-        )
-
-        # Прогрессти жаңыртуу
         is_passed = score_percentage >= quiz.pass_percentage
+
+        # 1. Аракетти жана прогрессти сактоо
+        QuizAttempt.objects.create(user=request.user, quiz=quiz, score=score_percentage)
         UserProgress.objects.update_or_create(
-            user=request.user, 
-            lesson=lesson,
-            defaults={
-                'score': score_percentage,
-                'is_completed': is_passed # Эгер упай жетсе True болот
-            }
+            user=request.user, lesson=lesson,
+            defaults={'score': score_percentage, 'is_completed': is_passed}
         )
 
+        # 🚀 2. ТЕЛЕГРАМГА БИЛДИРҮҮ ЖӨНӨТҮҮ (Ушул жерге кошулат)
+        try:
+            token = settings.TELEGRAM_BOT_TOKEN
+            chat_id = settings.TELEGRAM_CHAT_ID # settings.py ичиндеги '1388105915'
+            
+            status_text = "Өттү ✅" if is_passed else "Өткөн жок ❌"
+            message = (
+                f"🔔 *Тест аяктады!*\n\n"
+                f"👤 *Студент:* {request.user.get_full_name() or request.user.username}\n"
+                f"📖 *Тема:* {quiz.title}\n"
+                f"📊 *Жыйынтык:* {round(score_percentage, 1)}%\n"
+                f"✅ *Туура жооптор:* {correct_answers}/{total_questions}\n"
+                f"📝 *Статус:* {status_text}"
+            )
+            
+            url = f"https://api.telegram.org/bot{token}/sendMessage"
+            payload = {
+                'chat_id': chat_id,
+                'text': message,
+                'parse_mode': 'Markdown'
+            }
+            # Билдирүү жөнөтүү
+            requests.post(url, data=payload, timeout=5)
+        except Exception as e:
+            print(f"Telegram билдирүү кеткен жок: {e}")
+
+        # 3. Прокторинг сүрөттөрүн алуу
+        proctor_images = QuizSessionImage.objects.filter(
+            user=request.user, lesson=lesson
+        ).order_by('-created_at')[:12]
+
+        # 4. Жыйынтыкты экранга чыгаруу
         return render(request, 'teacher/quiz_result.html', {
             'score': score_percentage, 
             'quiz': quiz,
-            'is_passed': is_passed, # Шаблондо колдонуу үчүн
+            'is_passed': is_passed,
             'correct_answers': correct_answers,
-            'total_questions': total_questions
+            'total_questions': total_questions,
+            'proctor_images': proctor_images,
+            'lesson': lesson
         })
 
     return render(request, 'teacher/quiz.html', {
@@ -493,3 +550,72 @@ def add_question(request, quiz_id):
         return redirect('add_question', quiz_id=quiz.id)
             
     return render(request, 'teacher/add_question.html', {'quiz': quiz})
+def save_quiz_screenshot(request, lesson_id):
+    if request.method == 'POST':
+        try:
+            # 1. Браузерден келген JSON маалыматты окуу
+            data = json.loads(request.body)
+            image_data = data.get('image')
+            
+            if not image_data:
+                return JsonResponse({'status': 'error', 'message': 'No image data'}, status=400)
+
+            # 2. Сүрөттү Base64 форматынан файлга айлантуу
+            format, imgstr = image_data.split(';base64,')
+            ext = format.split('/')[-1]
+            decoded_file = base64.b64decode(imgstr)
+            file_name = f"proc_{request.user.id}_{lesson_id}_{int(now().timestamp())}.{ext}"
+            
+            lesson = get_object_or_404(Lesson, id=lesson_id)
+            
+            # 3. Базага сактоо
+            QuizSessionImage.objects.create(
+                user=request.user,
+                lesson=lesson,
+                image=ContentFile(decoded_file, name=file_name)
+            )
+
+            # 4. Telegram'га билдирүү жөнөтүү (Логиканы иретке келтирүү)
+            token = settings.TELEGRAM_BOT_TOKEN
+            chat_id = settings.TELEGRAM_CHAT_ID  # Сиздин ID: 1388105915
+            
+            if token and chat_id:
+                telegram_url = f"https://api.telegram.org/bot{token}/sendPhoto"
+                
+                # Файлды жана текстти даярдоо
+                files = {'photo': (file_name, decoded_file, f'image/{ext}')}
+                payload = {
+                    'chat_id': chat_id,
+                    'caption': f"📸 *Прокторинг:* {request.user.get_full_name() or request.user.username}\n📚 *Сабак:* {lesson.title}",
+                    'parse_mode': 'Markdown'
+                }
+
+                # Билдирүү жиберүү
+                try:
+                    response = requests.post(telegram_url, data=payload, files=files, timeout=10)
+                    print(f"Telegram Debug: {response.status_code} - {response.text}")
+                except Exception as tel_e:
+                    print(f"Telegram Connection Error: {tel_e}")
+
+            return JsonResponse({'status': 'success'})
+
+        except Exception as e:
+            # Ката болсо терминалга чыгарат
+            print(f"❌ СЕРВЕРДЕ КАТА: {str(e)}")
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+            
+    return JsonResponse({'status': 'invalid method'}, status=400)
+
+def home(request):
+    # Реалдуу маалыматтарды базадан эсептөө
+    total_students = User.objects.filter(is_staff=False).count() # Студенттер
+    total_teachers = User.objects.filter(is_staff=True).count()  # Мугалимдер/Админдер
+    total_courses = Course.objects.count() # Бардык курстардын саны
+    
+    context = {
+        'total_students': total_students,
+        'total_teachers': total_teachers,
+        'total_courses': total_courses,
+        'success_rate': "98%", # Бул азырынча туруктуу турсун
+    }
+    return render(request, 'front/home.html', context)

@@ -1,97 +1,308 @@
 {% extends "front/base.html" %}
-{% block title %}{{ user.username }}{% endblock %}
+{% load static %}
+
 {% block content %}
+<div class="site-wrapper">
+    <div class="grid-overlay"></div>
+    <div class="ambient-glow"></div>
 
-<div class="video-background">
-    <video autoplay muted loop class="video-bg" playsinline>
-        <source src="https://videos.pexels.com/video-files/4328789/4328789-uhd_2560_1440_25fps.mp4" type="video/mp4">
-        Браузериңиз видеофонду колдобойт.
-    </video>
-    <div class="overlay"></div>
-</div>
-
-<div class="container my-5 main-container">
-    {% if user.is_authenticated %}
-        <div class="welcome-card bg-glass text-white p-5 rounded-4 shadow-lg mb-4 position-relative">
-            <div class="position-absolute top-0 end-0 m-3">
-                <a href="{% url 'edit_profile' %}" class="text-white fs-4 settings-icon">
-                    <i class="bi bi-gear-fill"></i>
-                </a>
-            </div>
-            <div class="row align-items-center text-center text-md-start">
-                <div class="col-12 col-md-8 mb-3 mb-md-0">
-                    <h2 class="display-6 fw-bold mb-3">Кош келдиңиз, {{ user.username }}!</h2>
-                    <p class="lead mb-0">Статусуңуз: <span class="badge bg-light text-dark fs-6">{{ status }}</span></p>
-                </div>
-                <div class="col-12 col-md-4">
-                    <a href="{% url 'logout' %}" class="btn btn-light btn-lg rounded-pill px-4 shadow w-100">
-                        <i class="bi bi-box-arrow-right me-2"></i>Чыгуу
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <div class="actions-wrapper" style="width: 100%; max-width: 800px; margin: 0 auto;">
-            <div class="mb-3">
-                <a href="{{ url }}" class="btn btn-success btn-lg rounded-pill px-4 py-3 fs-5 shadow-lg hover-glow w-100">
-                    <i class="bi bi-rocket-takeoff me-2"></i>Ишти баштоо
-                </a>
-            </div>
-
-            {% if user.is_superuser %}
-                <div class="d-flex flex-wrap justify-content-center gap-2 mb-3">
-                    <a href="{% url 'users' %}" class="btn btn-primary btn-lg rounded-pill px-4 py-3 shadow-lg hover-glow flex-fill">
-                        <i class="bi bi-file-earmark-person"></i> Колдонуучулар
-                    </a>
-                    <a href="{% url 'admin_courses' %}" class="btn btn-primary btn-lg rounded-pill px-4 py-3 shadow-lg hover-glow flex-fill">
-                        <i class="bi bi-bar-chart-steps"></i> Бардык курстар
-                    </a>
-                </div>
-            {% endif %}
-
-            <div class="text-center mb-3">
-                <a href="{% url 'contact' %}" class="btn btn-warning btn-lg rounded-pill px-4 py-3 fs-5 shadow-lg hover-glow text-white w-100">
-                    <i class="bi bi-chat-dots-fill"></i> Колдоо кызматы менен байланышуу
-                </a>
+    <header class="site-header">
+        <div class="container d-flex justify-content-between align-items-center">
+            <a href="/" class="logo">CODDY<span>SCHOOL</span></a>
+            <nav class="main-nav d-none d-md-flex align-items-center">
+                <a href="#home">Башкы бет</a>
+                <a href="{% url 'admin_courses' %}">Курстар</a>
+                <a href="#faq">FAQ</a> <a href="#contact">Байланыш</a>
+                
+                <button id="theme-toggle" class="theme-switch-btn" title="Теманы алмаштыруу">
+                    <i class="bi bi-moon-stars" id="theme-icon"></i>
+                </button>
+            </nav>
+            <div class="auth-zone d-flex align-items-center gap-3">
+                {% if user.is_authenticated %}
+                    <span class="user-name d-none d-sm-inline">Салам, {{ user.username }}!</span>
+                    <a href="{% url 'edit_profile' %}" class="nav-icon-link" title="Жөндөөлөр"><i class="bi bi-gear-fill"></i></a>
+                    <a href="{% url 'logout' %}" class="btn-logout-icon" title="Чыгуу"><i class="bi bi-box-arrow-right"></i></a>
+                {% else %}
+                    <a href="{% url 'login' %}" class="login-link">Кирүү</a>
+                    <a href="{% url 'signup' %}" class="btn-signup">Катталуу</a>
+                {% endif %}
+                
+                <button class="menu-toggle d-md-none" id="mobile-menu-btn">
+                    <i class="bi bi-list"></i>
+                </button>
             </div>
         </div>
 
-    {% else %}
-        <div class="auth-container mx-auto bg-glass p-4 rounded-4 shadow-lg text-center" style="max-width: 500px;">
-            <div class="mb-4 text-white">
-                <i class="bi bi-person-circle display-1"></i>
-                <h1 class="h4 mb-2 fw-normal mt-3">Кош келиңиз</h1>
-            </div>
-            <div class="d-grid gap-3">
-                <a href="{% url 'login' %}" class="btn btn-primary btn-lg rounded-pill py-3 shadow hover-glow">Кирүү</a>
-                <a href="{% url 'signup' %}" class="btn btn-success btn-lg rounded-pill py-3 shadow hover-glow">Катталуу</a>
-                <a href="{% url 'contact' %}" class="btn btn-outline-light btn-lg rounded-pill py-3 shadow hover-glow">Байланыш</a>
+        <div class="mobile-menu d-md-none" id="mobile-menu">
+            <a href="#home">Башкы бет</a>
+            <a href="{% url 'admin_courses' %}">Курстар</a>
+            <a href="#faq">FAQ</a>
+            <a href="#contact">Байланыш</a>
+            <div class="p-3">
+                <button id="theme-toggle-mob" class="btn-secondary w-100">Теманы алмаштыруу</button>
             </div>
         </div>
-    {% endif %}
+    </header>
+
+    <main id="home" class="hero-section">
+        <div class="container">
+            <div class="row align-items-center min-vh-100">
+                <div class="col-lg-7 text-start">
+                    <div class="promo-tag">New Generation IT School</div>
+                    <h1 class="hero-title">Келечекти <span class="highlight">акылдуу</span> код менен куруңуз</h1>
+                    <p class="hero-subtitle">Заманбап IT билимди Light жана Dark режимдеринде, сизге ыңгайлуу форматта алыңыз.</p>
+                    
+                    <div class="hero-actions">
+                        {% if user.is_authenticated %}
+                            {% if user.is_staff %}
+                                <a href="{% url 'student' %}" class="btn-main">Окууну баштоо <i class="bi bi-arrow-right"></i></a>
+                            {% else %}
+                                <a href="{% url 'courses' %}" class="btn-main">Курстарды көрүү <i class="bi bi-arrow-right"></i></a>
+                                <a href="{% url 'edit_profile' %}" class="btn-secondary ms-3"><i class="bi bi-gear"></i> Настройка</a>
+                            {% endif %}
+                            {% if user.is_superuser %}
+                                <div class="mt-4">
+                                    <a href="{% url 'users' %}" class="admin-link">Колдонуучулар</a>
+                                    <a href="{% url 'admin_courses' %}" class="admin-link ms-3">Курстарды башкаруу</a>
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <a href="{% url 'signup' %}" class="btn-main">Азыр кошулуу</a>
+                            <a href="{% url 'login' %}" class="btn-secondary ms-3">Кирүү</a>
+                        {% endif %}
+                    </div>
+
+                    <div class="hero-stats d-flex gap-4 mt-5 pt-3">
+                        <div class="stat-item">
+                            <div class="stat-num">{{ total_courses|default:"0" }}+</div>
+                            <div class="stat-label">Активдүү курстар</div>
+                        </div>
+                        <div class="stat-divider"></div>
+                        <div class="stat-item">
+                            <div class="stat-num">{{ total_students|default:"0" }}+</div>
+                            <div class="stat-label">Студенттер</div>
+                        </div>
+                        <div class="stat-divider"></div>
+                        <div class="stat-item">
+                            <div class="stat-num">{{ success_rate|default:"98%" }}</div>
+                            <div class="stat-label">Ийгилик</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-5 d-none d-lg-block">
+                    <div class="hero-visual-box">
+                        <div class="code-window">
+                            <div class="dots"><span></span><span></span><span></span></div>
+                            <pre><code><span class="keyword">class</span> <span class="class-name">CoddySchool</span>:
+    <span class="keyword">def</span> <span class="func">future</span>(self):
+        <span class="keyword">return</span> <span class="string">"Success"</span></code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <section class="features-section py-5">
+        <div class="container">
+            <h2 class="section-title text-center mb-5">Биздин артыкчылыктар</h2>
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="feature-card h-100">
+                        <i class="bi bi-lightning-charge fs-1 text-accent mb-3"></i>
+                        <h3>Ыкчам окутуу</h3>
+                        <p class="text-dim">Практикага багытталган заманбап программалар.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card highlight-card h-100">
+                        <i class="bi bi-people fs-1 text-accent mb-3"></i>
+                        <h3>Мыкты менторлор</h3>
+                        <p class="text-dim">Тажрыйбалуу адистерден жеке кеңеш алыңыз.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card h-100">
+                        <i class="bi bi-award fs-1 text-accent mb-3"></i>
+                        <h3>Сертификат</h3>
+                        <p class="text-dim">ОшМУ тарабынан расмий тастыктама берилет.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="faq" class="py-5">
+        <div class="container">
+            <h2 class="section-title text-center mb-5">Көп берилүүчү суроолор</h2>
+            <div class="accordion accordion-flush mx-auto" id="faqAccordion" style="max-width: 800px;">
+                <div class="accordion-item bg-transparent border-bottom border-secondary">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-transparent text-white" type="button" data-bs-toggle="collapse" data-bs-target="#q1">
+                            Кантип катталсам болот?
+                        </button>
+                    </h2>
+                    <div id="q1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body text-dim">"Катталуу" баскычын басып, маалыматтарыңызды толтуруңуз.</div>
+                    </div>
+                </div>
+                <div class="accordion-item bg-transparent border-bottom border-secondary">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-transparent text-white" type="button" data-bs-toggle="collapse" data-bs-target="#q2">
+                            Окуу мөөнөтү канча?
+                        </button>
+                    </h2>
+                    <div id="q2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body text-dim">Курстун түрүнө жараша 3 айдан 6 айга чейин.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="contact" class="contact-section py-5">
+        <div class="container">
+            <h2 class="section-title text-center mb-5">Биздин жайгашкан жерибиз</h2>
+            
+            <div class="map-wrapper mb-5">
+                <div class="map-container">
+                    <iframe src="https://yandex.ru/map-widget/v1/?ll=72.794907%2C40.531673&mode=search&oid=166438127644&ol=biz&z=17" 
+                            width="100%" height="450" frameborder="0" allowfullscreen="true" style="position:relative;"></iframe>
+                </div>
+            </div>
+
+            <div class="contact-card">
+                <div class="row g-0">
+                    <div class="col-md-6 p-5">
+                        <h2 class="section-title">Биз менен байланышыңыз</h2>
+                        <p class="text-gray">Суроолоруңуз барбы? Биздин команда сизге жардам берүүгө даяр.</p>
+                        <div class="contact-info mt-4">
+                            <div class="info-item mb-3"><i class="bi bi-envelope-fill me-2 text-accent"></i> ishakishakov00@gmail.com</div>
+                            <div class="info-item mb-3"><i class="bi bi-geo-alt-fill me-2 text-accent"></i> Ош ш., ОшМУ (Башкы корпус)</div>
+                            <div class="info-item"><i class="bi bi-telephone-fill me-2 text-accent"></i> +996 (708) 51-50-52</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 p-5 bg-glass-dark">
+                        <form method="POST" action="{% url 'contact_send' %}" class="contact-form">
+                            {% csrf_token %}
+                            <input type="hidden" name="subject" value="Сайттан билдирүү">
+                            <input type="text" name="name" placeholder="Атыңыз" class="form-input" required>
+                            <input type="email" name="email" placeholder="Email" class="form-input" required>
+                            <textarea name="message" placeholder="Билдирүү" class="form-input" rows="3" required></textarea>
+                            <button type="submit" class="btn-main w-100">Жиберүү</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <button id="backToTop" class="btn-to-top"><i class="bi bi-arrow-up-short"></i></button>
+
+    <footer class="site-footer">
+        <div class="container text-center py-4">
+            <p>&copy; 2026 CODDY SCHOOL. Бардык укуктар корголгон.</p>
+        </div>
+    </footer>
 </div>
 
 <style>
-    /* Фон жана Видео */
-    .video-background { position: fixed; top: 0; left: 0; width: 100%; height: 100%; overflow: hidden; z-index: -1; }
-    .video-bg { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.4); }
-    .overlay { position: absolute; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+    /* СЕНИН СТИЛДЕРИҢ (ӨЗГӨРТҮҮСҮЗ) */
+    :root {
+        --bg: #050505;
+        --accent: #10b981;
+        --glass: rgba(255, 255, 255, 0.03);
+        --border: rgba(255, 255, 255, 0.08);
+        --text: #ffffff;
+        --text-dim: #a1a1a6;
+    }
+    [data-theme="light"] {
+        --bg: #f8fafc;
+        --glass: rgba(0, 0, 0, 0.03);
+        --border: rgba(0, 0, 0, 0.1);
+        --text: #0f172a;
+        --text-dim: #64748b;
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; margin: 0; scroll-behavior: smooth; transition: 0.3s; }
+    .grid-overlay { position: fixed; inset: 0; z-index: -1; background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: 45px 45px; mask-image: radial-gradient(circle at center, black, transparent 90%); }
+    .ambient-glow { position: fixed; top: -10%; right: -5%; width: 50vw; height: 50vh; background: radial-gradient(circle, rgba(16, 185, 129, 0.05) 0%, transparent 70%); z-index: -1; }
+    .site-header { padding: 20px 0; border-bottom: 1px solid var(--border); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 100; }
+    .logo { font-size: 1.5rem; font-weight: 800; color: var(--text); text-decoration: none; }
+    .logo span { color: var(--accent); }
+    .main-nav a { color: var(--text-dim); text-decoration: none; margin: 0 20px; font-weight: 500; transition: 0.3s; position: relative; }
+    .main-nav a:hover { color: var(--accent); }
+    .btn-main { background: var(--accent); color: #fff !important; padding: 14px 30px; border-radius: 12px; text-decoration: none; font-weight: 700; display: inline-block; transition: 0.3s; border: none; }
+    .btn-main:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3); }
+    .btn-secondary { border: 1px solid var(--border); color: var(--text); padding: 14px 30px; border-radius: 12px; text-decoration: none; font-weight: 700; transition: 0.3s; display: inline-block; }
+    .stat-num { font-size: 2rem; font-weight: 800; color: var(--accent); line-height: 1; }
+    .stat-label { font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-top: 5px; }
+    .map-container { border-radius: 25px; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 15px 35px rgba(0,0,0,0.2); }
+    .contact-card { background: var(--glass); border: 1px solid var(--border); border-radius: 30px; overflow: hidden; backdrop-filter: blur(10px); }
+    .bg-glass-dark { background: rgba(0,0,0,0.15); border-left: 1px solid var(--border); }
+    .form-input { width: 100%; background: var(--glass); border: 1px solid var(--border); border-radius: 10px; padding: 12px; color: var(--text); margin-bottom: 15px; outline: none; transition: 0.3s; }
+    .hero-visual-box { background: var(--glass); border: 1px solid var(--border); border-radius: 20px; padding: 25px; backdrop-filter: blur(5px); }
+    .theme-switch-btn { background: var(--glass); border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: 10px; cursor: pointer; transition: 0.3s; }
+
+    /* ЖАҢЫ КОШУЛГАН СТИЛДЕР */
+    .menu-toggle { background: var(--glass); border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: 10px; }
+    .mobile-menu { display: none; background: var(--bg); border-bottom: 1px solid var(--border); padding: 20px; }
+    .mobile-menu.active { display: block; }
+    .mobile-menu a { display: block; padding: 10px 0; color: var(--text); text-decoration: none; border-bottom: 1px solid var(--border); }
     
-    /* Контейнер */
-    .main-container { position: relative; z-index: 2; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 90vh; padding: 1rem; }
-    
-    /* Glassmorphism */
-    .bg-glass { background: rgba(255,255,255,0.1); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.2); }
-    
-    /* Анимациялар */
-    .hover-glow:hover { box-shadow: 0 0 25px rgba(255,255,255,0.6); transform: translateY(-5px); transition: 0.3s ease; }
-    .settings-icon:hover { transform: rotate(90deg); transition: 0.4s ease; }
-    
-    .welcome-card, .auth-container, .actions-wrapper { animation: fadeInUp 0.8s ease-in-out; width: 100%; max-width: 800px; }
-    @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-    
-    /* Мобилдик версия */
-    @media (max-width:768px) { .welcome-card h2 { font-size: 1.4rem; } .btn-lg { font-size: 0.95rem; } }
+    .feature-card { background: var(--glass); border: 1px solid var(--border); padding: 30px; border-radius: 25px; transition: 0.3s; text-align: center; }
+    .feature-card:hover { border-color: var(--accent); transform: translateY(-5px); }
+    .highlight-card { border-color: var(--accent); background: rgba(16, 185, 129, 0.05); }
+
+    .btn-to-top { position: fixed; bottom: 30px; right: 30px; width: 50px; height: 50px; background: var(--accent); color: white; border: none; border-radius: 15px; display: none; z-index: 1000; font-size: 1.5rem; box-shadow: 0 10px 20px rgba(16,185,129,0.3); }
+
+    .accordion-button::after { filter: invert(1); }
+    [data-theme="light"] .accordion-button::after { filter: invert(0); }
 </style>
 
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- Сенин тема которгуч кодуң (сакталды) ---
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeToggleMob = document.getElementById('theme-toggle-mob');
+        const themeIcon = document.getElementById('theme-icon');
+        const html = document.documentElement;
+
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        html.setAttribute('data-theme', savedTheme);
+        updateIcon(savedTheme);
+
+        function updateIcon(theme) {
+            if (theme === 'light') {
+                themeIcon.classList.replace('bi-moon-stars', 'bi-sun-fill');
+            } else {
+                themeIcon.classList.replace('bi-sun-fill', 'bi-moon-stars');
+            }
+        }
+
+        const handleThemeAction = () => {
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateIcon(newTheme);
+        };
+
+        themeToggle.addEventListener('click', handleThemeAction);
+        themeToggleMob.addEventListener('click', handleThemeAction);
+
+        // --- ЖАҢЫ: Мобилдик меню ---
+        const menuBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+        menuBtn.onclick = () => mobileMenu.classList.toggle('active');
+
+        // --- ЖАҢЫ: Back to Top ---
+        const backBtn = document.getElementById('backToTop');
+        window.onscroll = () => {
+            backBtn.style.display = window.scrollY > 500 ? 'block' : 'none';
+        };
+        backBtn.onclick = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+</script>
 {% endblock %}

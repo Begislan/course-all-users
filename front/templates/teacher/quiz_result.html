@@ -2,72 +2,209 @@
 
 {% block content %}
 <style>
+    /* Негизги фон */
     .result-page {
         display: flex;
         justify-content: center;
         align-items: center;
-        min-height: 80vh;
-        padding: 20px;
+        min-height: 90vh;
+        padding: 30px 20px;
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
     }
+
+    /* Жыйынтык картасы - Glassmorphism */
     .result-card {
-        background: #1e293b; /* Кара-көк түс */
-        padding: 40px;
-        border-radius: 24px;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        background: rgba(30, 41, 59, 0.7);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        padding: 50px 40px;
+        border-radius: 32px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         text-align: center;
-        max-width: 500px;
+        max-width: 600px;
         width: 100%;
         color: #f8fafc;
-        border: 1px solid #334155;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        animation: fadeInUp 0.6s ease-out;
     }
+
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Упай тегереги */
+    .score-container {
+        position: relative;
+        width: 150px;
+        height: 150px;
+        margin: 0 auto 30px;
+    }
+
     .score-circle {
-        width: 120px;
-        height: 120px;
+        width: 100%;
+        height: 100%;
         border-radius: 50%;
-        background: #0f172a;
+        background: rgba(15, 23, 42, 0.8);
         display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
-        margin: 0 auto 20px;
-        border: 6px solid #10b981;
-        font-size: 2rem;
-        font-weight: 800;
-        color: #10b981;
+        border: 8px solid;
+        box-shadow: 0 0 20px rgba(0,0,0,0.2);
     }
-    .btn-custom {
-        padding: 12px 25px;
+
+    .score-value { font-size: 2.5rem; font-weight: 900; line-height: 1; }
+    .score-label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; opacity: 0.8; }
+
+    /* Прокторинг бөлүмү */
+    .proctor-section {
+        margin: 35px 0;
+        padding: 20px;
+        background: rgba(15, 23, 42, 0.5);
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .proctor-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+        gap: 12px;
+        margin-top: 15px;
+    }
+
+    .proctor-img-wrapper {
+        position: relative;
         border-radius: 12px;
-        font-weight: 600;
-        transition: 0.3s;
-        text-decoration: none;
-        display: inline-block;
+        overflow: hidden;
+        aspect-ratio: 4/3;
+        border: 2px solid rgba(255, 255, 255, 0.1);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
     }
-    .btn-home { background: #10b981; color: white; }
-    .btn-home:hover { background: #059669; }
-    .btn-back { border: 2px solid #475569; color: #cbd5e1; }
-    .btn-back:hover { background: #334155; }
+
+    .proctor-img-wrapper:hover {
+        transform: scale(1.1);
+        border-color: #3b82f6;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+    }
+
+    .proctor-img-wrapper img { width: 100%; height: 100%; object-fit: cover; }
+
+    /* Кнопкалар */
+    .action-buttons {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 30px;
+    }
+
+    .btn-res {
+        padding: 14px 20px; border-radius: 16px; font-weight: 700;
+        transition: all 0.3s; text-decoration: none; display: flex;
+        align-items: center; justify-content: center; gap: 8px;
+    }
+
+    .btn-primary-res {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+    }
+
+    .btn-secondary-res {
+        background: rgba(71, 85, 105, 0.2); color: #cbd5e1;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* --- LIGHTBOX (Сүрөттү чоңойтуу) СТИЛИ --- */
+    .modal-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0, 0, 0, 0.95); display: none;
+        justify-content: center; align-items: center; z-index: 9999;
+    }
+
+    .modal-overlay.active { display: flex; }
+
+    .modal-content {
+        max-width: 90%; max-height: 85vh; border-radius: 15px;
+        box-shadow: 0 0 30px rgba(0,0,0,0.5);
+        transform: scale(0.8); transition: 0.3s ease;
+    }
+
+    .modal-overlay.active .modal-content { transform: scale(1); }
+
+    .close-modal {
+        position: absolute; top: 20px; right: 30px;
+        color: white; font-size: 45px; cursor: pointer; line-height: 1;
+    }
 </style>
 
 <div class="result-page">
     <div class="result-card">
-        <div class="score-circle">{{ score|floatformat:0 }}%</div>
+        <div class="score-container">
+            <div class="score-circle" style="border-color: {% if is_passed %}#10b981{% else %}#ef4444{% endif %}; color: {% if is_passed %}#10b981{% else %}#ef4444{% endif %};">
+                <span class="score-value">{{ score|floatformat:0 }}%</span>
+                <span class="score-label">Жыйынтык</span>
+            </div>
+        </div>
         
         {% if is_passed %}
-            <h2 class="text-success mb-3">Куттуктайбыз! 🎉</h2>
-            <p>Сиз тесттен ийгиликтүү өттүңүз. Кийинки сабакка өтсөңүз болот.</p>
+            <h2 style="color: #10b981;" class="fw-bold mb-3">Куттуктайбыз! 🎉</h2>
+            <p class="text-secondary">Сиз тесттен ийгиликтүү өттүңүз. Сабак өздөштүрүлдү.</p>
         {% else %}
-            <h2 class="text-danger mb-3">Кайра аракет кылыңыз 🔄</h2>
-            <p>Сизге бир аз көбүрөөк упай керек. Сабакты кайра окуп көрүңүз.</p>
+            <h2 style="color: #ef4444;" class="fw-bold mb-3">Өтпөй калдыңыз 🔄</h2>
+            <p class="text-secondary">Өтүү үчүн кеминде <b>{{ quiz.pass_percentage }}%</b> керек.</p>
         {% endif %}
 
-        <div class="d-grid gap-3 mt-4">
-            <a href="{% url 'course_view' quiz.lesson.course.id quiz.lesson.id %}" class="btn-custom btn-back">
-                🔙 Сабакка кайтуу
+        <hr style="border-color: rgba(255,255,255,0.1); margin: 30px 0;">
+
+        <div class="proctor-section">
+            <h6 class="text-uppercase small fw-bold mb-3" style="color: #94a3b8;">
+                <i class="fas fa-camera me-2"></i>Прокторинг скриншоттору
+            </h6>
+            <div class="proctor-grid">
+                {% for img in proctor_images %}
+                    <div class="proctor-img-wrapper" onclick="openLightbox('{{ img.image.url }}')">
+                        <img src="{{ img.image.url }}" alt="Proctoring">
+                    </div>
+                {% empty %}
+                    <div class="w-100 py-3 text-center opacity-50 small">Сүрөттөр жок.</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="action-buttons">
+            <a href="{% url 'course_view' quiz.lesson.course.id quiz.lesson.id %}" class="btn-res btn-secondary-res">
+                <i class="fas fa-arrow-left"></i> Сабакка
             </a>
-            <a href="/" class="btn-custom btn-home">
-                🏠 Башкы бетке
+            <a href="/" class="btn-res btn-primary-res">
+                <i class="fas fa-home"></i> Башкы бет
             </a>
         </div>
     </div>
 </div>
+
+<div id="imageModal" class="modal-overlay" onclick="closeLightbox()">
+    <span class="close-modal">&times;</span>
+    <img id="modalImg" class="modal-content" src="" alt="Zoomed">
+</div>
+
+<script>
+    // Сүрөттү ачуу функциясы
+    function openLightbox(src) {
+        const modal = document.getElementById('imageModal');
+        const modalImg = document.getElementById('modalImg');
+        modalImg.src = src;
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden'; // Скроллду токтотуу
+    }
+
+    // Сүрөттү жабуу функциясы
+    function closeLightbox() {
+        const modal = document.getElementById('imageModal');
+        modal.classList.remove('active');
+        document.body.style.overflow = 'auto'; // Скроллду кайтаруу
+    }
+
+    // Escape баскычы менен жабуу
+    document.addEventListener('keydown', function(e) {
+        if (e.key === "Escape") closeLightbox();
+    });
+</script>
 {% endblock %}

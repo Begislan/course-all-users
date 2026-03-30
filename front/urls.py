@@ -2,10 +2,11 @@ from django.urls import path
 from front import views
 
 urlpatterns = [
-    # Негизги барак
+    # Негизги барактар
     path('', views.home, name='home'),
-
-    # --- МУГАЛИМДИН ПАНЕЛИ (Курстар жана сабактар) ---
+    path('student/', views.student, name='student'),
+    
+    # --- МУГАЛИМДИН ПАНЕЛИ ---
     path('courses/', views.teacher_all, name='courses'),
     path('courses/<int:course_id>/', views.teacher_all, name='course_detail'),
     path('courses/<int:course_id>/<int:lesson_id>/', views.teacher_all, name='lesson_detail'),
@@ -18,22 +19,21 @@ urlpatterns = [
     path('lessons/<int:lesson_id>/edit/', views.edit_lesson, name='edit_lesson'),
     path('lessons/<int:lesson_id>/delete/', views.delete_lesson, name='delete_lesson'),
 
-    # --- КОНТЕНТ ЖАНА ТЕСТ БАШКАРУУ (Мугалим үчүн) ---
     path('lessons/<int:lesson_id>/content/add/', views.add_content, name='add_content'),
     path('content/<int:content_id>/edit/', views.edit_content, name='edit_content'),
     path('content/<int:content_id>/delete/', views.delete_content, name='delete_content'),
-    path('quiz/<int:quiz_id>/add-question/', views.add_question, name='add_question'),
     
-    # Сиздин катаны оңдоочу сап:
     path('lesson/<int:lesson_id>/add_quiz/', views.add_quiz, name='add_quiz'),
+    path('quiz/<int:quiz_id>/add-question/', views.add_question, name='add_question'),
 
     # --- СТУДЕНТТИН БАРАКЧАЛАРЫ ---
-    path('student/', views.student, name='student'),
-    # Сабакты көрүү (Бир эле жол жетиштүү)
-    path('lessons-view/<int:course_id>/<int:lesson_id>/', views.course_view, name='course_view'),  
+    path('lessons-view/<int:course_id>/<int:lesson_id>/', views.course_view, name='course_view'),
+    path('lessons-view/<int:course_id>/', views.course_view, name='course_view_start'), 
 
-    # Тест тапшыруу (Студент үчүн)
     path('quiz/<int:lesson_id>/', views.take_quiz, name='take_quiz'),
+    
+    # 📸 ПРОКТОРИНГ: Скриншот сактоо жолу (ЖАҢЫ)
+    path('quiz/save-screenshot/<int:lesson_id>/', views.save_quiz_screenshot, name='save_quiz_screenshot'),
 
     # --- АДМИН ЖАНА КОЛДОНУУЧУЛАР ---
     path('users/', views.users, name='users'),

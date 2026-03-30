@@ -100,3 +100,8 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'ishakishakov00@gmail.com' # Почтаңызды жазыңыз
 EMAIL_HOST_PASSWORD = 'nboz ttih qcak rsip' # 16 тамгалуу App Password жазыңыз
 DEFAULT_FROM_EMAIL = f'Bilim Platform <{EMAIL_HOST_USER}>'
+TELEGRAM_BOT_TOKEN = '8779200306:AAHpNc1AE4OUNIRGzdUK_Zl9iC5imX27Qcg' 
+
+# @userinfobot'тон алган ID номериңизди бул жерге жазыңыз:
+# settings.py файлын ушинтип оңдоңуз:
+TELEGRAM_CHAT_ID = '1388105915'  # Скриншоттогу Your ID дегенди жазыңыз

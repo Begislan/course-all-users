@@ -94,9 +94,15 @@ def logout_view(request):
 @login_required
 def edit_profile(request):
     if request.method == "POST":
-        form = UserEditForm(request.POST, request.FILES, instance=request.user)
+        # БУЛ ЖЕРГЕ request.FILES КОШУУ КЕРЕК:
+        form = UserEditForm(request.POST, request.FILES, instance=request.user) 
         if form.is_valid():
-            form.save()
+            user = form.save(commit=False)
+            # Эгер сырсөз талаасы толтурулган болсо, аны өзгөртүү
+            new_password = request.POST.get('password')
+            if new_password:
+                user.set_password(new_password)
+            user.save()
             messages.success(request, "Профилиңиз жаңыртылды!")
             return redirect('edit_profile')
     else:

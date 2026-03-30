@@ -70,20 +70,33 @@
 
     #menu-toggle { display: none; background: var(--step-bg); border-radius: 8px; border: none; padding: 5px 10px; }
     @media (max-width: 991px) { #menu-toggle { display: block; } }
+.media-container img {
+        max-width: 100%;
+        height: auto;
+        display: block;
+        border-radius: 12px;
+    }
+    .video-file-container video {
+        width: 100%;
+        border-radius: 12px;
+        background: #000;
+    }
+    /* Караңгы теманы демейки кылуу үчүн стилдер */
+    body.dark-theme { background-color: #020617; color: #f1f5f9; }
 </style>
 
 <header class="dynamic-header">
     <div class="header-container">
         <div class="d-flex align-items-center gap-2">
-            <button id="menu-toggle"><i class="bi bi-list fs-4"></i></button>
+            <button id="menu-toggle" class="btn btn-sm"><i class="bi bi-list fs-4 text-white"></i></button>
             <a href="/" class="brand-logo text-decoration-none d-flex align-items-center gap-2">
                 <div class="logo-icon">B</div>
-                <div class="logo-text fw-bold d-none d-sm-block" style="color: var(--text-dark);">Bilim<span>Platform</span></div>
+                <div class="logo-text fw-bold d-none d-sm-block text-white">Bilim<span>Platform</span></div>
             </a>
         </div>
         <div class="d-flex align-items-center gap-3">
-            <button id="theme-toggle" class="border-0 bg-transparent fs-4"><i class="bi bi-moon-stars-fill" id="theme-icon"></i></button>
-            <div class="user-info text-end">
+            <button id="theme-toggle" class="border-0 bg-transparent fs-4 text-white"><i class="bi bi-moon-stars-fill" id="theme-icon"></i></button>
+            <div class="user-info text-end text-white">
                 <div class="fw-bold small d-none d-md-block">{{ user.username }}</div>
                 <div class="text-success fw-bold" style="font-size: 11px;">{{ progress_percent }}%</div>
             </div>
@@ -96,7 +109,6 @@
     <aside class="lessons-sidebar" id="sidebar">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <span class="text-uppercase fw-bold opacity-50 small">Сабактар</span>
-            <button class="btn d-lg-none" onclick="toggleSidebar()"><i class="bi bi-x-lg"></i></button>
         </div>
         {% for lesson in lessons %}
             <a href="{% if not lesson.is_locked %}{% url 'course_view' course.id lesson.id %}{% else %}#{% endif %}" 
@@ -112,9 +124,10 @@
             <div class="steps-nav d-flex gap-2 mb-4">
                 {% for content in contents %}
                     <a href="?step={{ forloop.counter0 }}" class="step-btn {% if forloop.counter0 == step_index %}active{% endif %}">
-                        {% if content.content_type == 'video' %}<i class="bi bi-play-fill"></i>
+                        {% if content.content_type == 'video' or content.content_type == 'video_file' %}<i class="bi bi-play-fill"></i>
                         {% elif content.content_type == 'text' %}<i class="bi bi-file-text"></i>
-                        {% else %}<i class="bi bi-image"></i>{% endif %}
+                        {% elif content.content_type == 'image' %}<i class="bi bi-image"></i>
+                        {% else %}<i class="bi bi-paperclip"></i>{% endif %}
                     </a>
                 {% endfor %}
             </div>
@@ -125,20 +138,47 @@
                 {% if current_content %}
                     <div class="content-block">
                         {% if current_content.content_type == 'text' %}
-                            <div class="content-text" style="line-height: 1.6;">{{ current_content.content_data|linebreaks }}</div>
+                            <div class="content-text">{{ current_content.content_data|linebreaks }}</div>
+                        
                         {% elif current_content.content_type == 'image' %}
-                            <div class="media-container"><img src="{{ current_content.content_data }}" class="w-100" alt="lesson image"></div>
+                            <div class="media-container text-center">
+                                {% if current_content.file %}
+                                    <img src="{{ current_content.file.url }}" alt="lesson image">
+                                {% else %}
+                                    <p class="text-danger">Сүрөт файлы табылган жок</p>
+                                {% endif %}
+                            </div>
+
                         {% elif current_content.content_type == 'video' %}
-                            <div class="ratio ratio-16x9 shadow-sm"><iframe src="{{ current_content.content_data|youtube_embed_url }}" allowfullscreen></iframe></div>
+                            <div class="ratio ratio-16x9 shadow-sm">
+                                <iframe src="{{ current_content.content_data|youtube_embed_url }}" allowfullscreen></iframe>
+                            </div>
+
+                        {% elif current_content.content_type == 'video_file' %}
+                            <div class="video-file-container">
+                                <video controls>
+                                    <source src="{{ current_content.file.url }}" type="video/mp4">
+                                    Браузериңиз видеону колдобойт.
+                                </video>
+                            </div>
+                        
+                        {% elif current_content.content_type == 'file' %}
+                            <div class="p-3 bg-light border rounded d-flex align-items-center gap-3">
+                                <i class="bi bi-file-earmark-arrow-down fs-2 text-primary"></i>
+                                <div>
+                                    <div class="fw-bold">Тиркеме файл</div>
+                                    <a href="{{ current_content.file.url }}" class="btn btn-sm btn-primary" download>Жүктөп алуу</a>
+                                </div>
+                            </div>
                         {% endif %}
                     </div>
                 {% endif %}
 
                 {% if step_index|add:1 == contents|length and has_quiz %}
-                    <div class="p-4 text-center mt-4 shadow-sm" style="background: var(--step-bg); border-radius: 20px; border: 2px dashed var(--success);">
-                        <h5>🎓 Сабак аяктады!</h5>
-                        <p class="small text-muted">Кийинки сабакты ачуу үчүн тесттен өтүңүз.</p>
-                        <a href="{% url 'take_quiz' selected_lesson.id %}" class="btn btn-success w-100 py-2 rounded-pill shadow-sm">Тестти баштоо</a>
+                    <div class="p-4 text-center mt-4 shadow-sm quiz-card" style="background: rgba(16, 185, 129, 0.1); border-radius: 20px; border: 2px dashed #10b981;">
+                        <h5 class="text-white">🎓 Сабак аяктады!</h5>
+                        <p class="small text-white-50">Кийинки сабакты ачуу үчүн тесттен өтүңүз.</p>
+                        <a href="{% url 'take_quiz' selected_lesson.id %}" class="btn btn-success px-5 rounded-pill">Тестти баштоо</a>
                     </div>
                 {% endif %}
 
@@ -175,7 +215,7 @@
                         {% if not next_lesson.is_locked %}
                             <a href="{% url 'course_view' course.id next_lesson.id %}" class="btn-nav btn-next">Кийинки сабак</a>
                         {% else %}
-                            <span class="btn-nav btn-prev opacity-50"><i class="bi bi-lock-fill"></i> Тесттен өтүңүз</span>
+                            <span class="btn-nav btn-prev opacity-50" title="Алгач тесттен өтүңүз"><i class="bi bi-lock-fill"></i> Кийинки сабак</span>
                         {% endif %}
                     {% endif %}
                 </div>
@@ -185,49 +225,53 @@
 </div>
 
 <script>
-    // Sidebar & Theme logic
+    // Тема жана Сайдбар логикасы (Мурунку жазганыңыз калат, бирок караңгы теманы демейки кылуу үчүн Settings жөндөлгөн)
     const sidebar = document.getElementById('sidebar');
     const menuToggle = document.getElementById('menu-toggle');
-    function toggleSidebar() { sidebar.classList.toggle('active'); }
-    menuToggle.addEventListener('click', toggleSidebar);
+    if (menuToggle) {
+        menuToggle.addEventListener('click', () => sidebar.classList.toggle('active'));
+    }
 
     const body = document.body;
     const themeIcon = document.getElementById('theme-icon');
+    
+    // Демейки Түн режими
+    if (localStorage.getItem('theme') === null) {
+        localStorage.setItem('theme', 'dark');
+    }
+
     if (localStorage.getItem('theme') === 'light') {
         body.classList.remove('dark-theme');
         themeIcon.className = 'bi bi-sun-fill';
+    } else {
+        body.classList.add('dark-theme');
+        themeIcon.className = 'bi bi-moon-stars-fill';
     }
+
     document.getElementById('theme-toggle').addEventListener('click', () => {
         body.classList.toggle('dark-theme');
         const isDark = body.classList.contains('dark-theme');
         localStorage.setItem('theme', isDark ? 'dark' : 'light');
-        themeIcon.className = isDark ? 'bi bi-moon-stars-fill' : 'bi-sun-fill';
+        themeIcon.className = isDark ? 'bi bi-moon-stars-fill' : 'bi bi-sun-fill';
     });
 
-    // AJAX Комментарий сактоо
+    // AJAX Комментарий (Сиздин кодуңуз туура)
     document.getElementById('comment-form').addEventListener('submit', function(e) {
         e.preventDefault();
-        const textInput = document.getElementById('comment-text');
         const formData = new FormData(this);
-        
         fetch(window.location.href, {
             method: 'POST',
             body: formData,
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         })
-        .then(response => response.json())
+        .then(res => res.json())
         .then(data => {
             if (data.status === 'success') {
                 const list = document.getElementById('comments-list');
-                const newComment = `
-                    <div class="comment-item">
-                        <div class="logo-icon">${data.initial}</div>
-                        <div><div class="fw-bold small">${data.user}</div><p class="text-muted small mb-0">${data.text}</p></div>
-                    </div>`;
-                list.insertAdjacentHTML('afterbegin', newComment);
-                textInput.value = '';
-                const count = document.getElementById('comment-count');
-                count.innerText = parseInt(count.innerText) + 1;
+                const newHtml = `<div class="comment-item"><div class="logo-icon">${data.initial}</div><div><div class="fw-bold small">${data.user}</div><p class="text-muted small mb-0">${data.text}</p></div></div>`;
+                list.insertAdjacentHTML('afterbegin', newHtml);
+                document.getElementById('comment-text').value = '';
+                document.getElementById('comment-count').innerText = parseInt(document.getElementById('comment-count').innerText) + 1;
             }
         });
     });

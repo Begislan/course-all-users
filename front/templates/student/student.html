@@ -24,7 +24,7 @@
     /* --- HERO СЕКЦИЯ --- */
     .courses-hero {
         position: relative;
-        padding: 80px 0;
+        padding: 60px 0;
         background: transparent;
         overflow: hidden;
     }
@@ -39,7 +39,7 @@
     }
 
     .hero-title {
-        font-size: clamp(2.5rem, 5vw, 4rem);
+        font-size: clamp(2.5rem, 5vw, 3.5rem);
         font-weight: 800;
         background: linear-gradient(135deg, #fff 40%, #10b981 100%);
         -webkit-background-clip: text;
@@ -50,26 +50,26 @@
     /* --- КАРТОЧКАЛАР --- */
     .course-card {
         position: relative;
-        height: 450px;
-        border-radius: 28px;
+        height: 420px;
+        border-radius: 24px;
         overflow: hidden;
         background: #111827;
         border: 1px solid rgba(255, 255, 255, 0.08);
-        transition: all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+        transition: all 0.4s ease;
     }
 
     .course-card:hover {
-        transform: translateY(-15px);
+        transform: translateY(-10px);
         border-color: #10b981;
-        box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6), 0 0 20px rgba(16, 185, 129, 0.2);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
     }
 
     .course-bg-img {
         position: absolute;
         width: 100%; height: 100%;
         object-fit: cover;
-        opacity: 0.4;
-        transition: 0.8s ease;
+        opacity: 0.35;
+        transition: 0.6s ease;
     }
 
     .overlay {
@@ -77,8 +77,8 @@
         inset: 0;
         background: linear-gradient(180deg, 
             rgba(0,0,0,0) 0%, 
-            rgba(6, 10, 18, 0.4) 30%, 
-            rgba(6, 10, 18, 0.98) 100%);
+            rgba(6, 10, 18, 0.3) 40%, 
+            rgba(6, 10, 18, 0.95) 100%);
         z-index: 1;
     }
 
@@ -89,96 +89,84 @@
         display: flex;
         flex-direction: column;
         justify-content: flex-end;
-        padding: 2rem;
+        padding: 1.5rem;
     }
 
     .author-badge {
-        background: rgba(16, 185, 129, 0.15);
-        color: #34d399;
-        backdrop-filter: blur(10px);
-        padding: 5px 12px;
-        border-radius: 10px;
+        background: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+        padding: 4px 10px;
+        border-radius: 8px;
         font-size: 0.7rem;
         font-weight: 700;
-        border: 1px solid rgba(16, 185, 129, 0.3);
-        margin-bottom: 12px;
+        border: 1px solid rgba(16, 185, 129, 0.2);
+        margin-bottom: 10px;
         width: fit-content;
     }
 
     .card-title {
-        font-size: 1.5rem;
+        font-size: 1.4rem;
         font-weight: 700;
-        margin-bottom: 15px;
+        margin-bottom: 12px;
         color: white;
     }
 
-    /* --- ПРОГРЕСС БАР СТИЛИ --- */
-    .progress-container {
-        margin-bottom: 20px;
-    }
-
+    /* --- ПРОГРЕСС БАР --- */
     .progress-text {
         display: flex;
         justify-content: space-between;
-        font-size: 0.75rem;
-        margin-bottom: 8px;
+        font-size: 0.7rem;
+        margin-bottom: 6px;
         font-weight: 600;
         color: #94a3b8;
     }
 
     .custom-progress-bg {
-        height: 6px;
+        height: 5px;
         background: rgba(255, 255, 255, 0.1);
         border-radius: 10px;
-        overflow: hidden;
+        margin-bottom: 15px;
     }
 
     .custom-progress-fill {
         height: 100%;
-        background: linear-gradient(90deg, #10b981, #34d399);
-        box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+        background: #10b981;
         border-radius: 10px;
-        transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: width 1s ease;
     }
 
     /* --- КНОПКА --- */
     .btn-premium {
         background: #10b981;
-        color: #fff;
+        color: #000;
         font-weight: 700;
-        border-radius: 14px;
-        padding: 10px 20px;
-        transition: 0.3s;
+        border-radius: 12px;
+        padding: 10px;
         text-decoration: none;
         display: flex;
         align-items: center;
         justify-content: center;
         gap: 8px;
-        width: 100%;
+        font-size: 0.9rem;
+        transition: 0.3s ease;
     }
 
     .btn-premium:hover {
         background: #34d399;
-        color: #000;
-        box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
-    }
-
-    .title-line {
-        width: 60px; height: 4px;
-        background: #10b981;
-        margin: 15px auto;
-        border-radius: 10px;
+        box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
     }
 </style>
 
 <header class="navbar navbar-expand-lg navbar-dark">
-    <div class="container d-flex justify-content-between align-items-center">
+    <div class="container">
         <div class="dropdown">
             <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" data-bs-toggle="dropdown">
                 {% if user.photo %}
-                    <img src="{{ user.photo.url }}" class="rounded-circle me-2" width="35" height="35" style="border: 2px solid #10b981;">
+                    <img src="{{ user.photo.url }}" class="rounded-circle me-2" width="35" height="35" style="border: 1px solid #10b981;">
                 {% else %}
-                    <div class="rounded-circle me-2 d-flex align-items-center justify-content-center" style="width:35px; height:35px; background: #10b981; color: black; font-weight: 800;">{{ user.username|first|upper }}</div>
+                    <div class="rounded-circle me-2 d-flex align-items-center justify-content-center" style="width:35px; height:35px; background: #10b981; color: black; font-weight: 800;">
+                        {{ user.username|first|upper }}
+                    </div>
                 {% endif %}
                 <span class="fw-bold">{{ user.username }}</span>
             </a>
@@ -186,7 +174,7 @@
                 <li><a class="dropdown-item" href="{% url 'logout' %}">Чыгуу</a></li>
             </ul>
         </div>
-        <a href="/" class="btn btn-outline-success rounded-pill px-4 btn-sm">Башкы бет</a>
+        <a href="/" class="btn btn-outline-light btn-sm rounded-pill px-3">Башкы бет</a>
     </div>
 </header>
 
@@ -194,12 +182,11 @@
     <div class="hero-blob"></div>
     <div class="container">
         <h1 class="hero-title">Менин окуум</h1>
-        <div class="title-line"></div>
-        <p class="lead text-white-50 small">Өнүгүүдөн токтобоңуз, ар бир кадам маанилүү!</p>
+        <p class="text-white-50 mt-2">Өнүгүүдөн токтобоңуз, ар бир кадам маанилүү!</p>
     </div>
 </div>
 
-<div class="container py-4">
+<div class="container pb-5">
     <div class="row g-4">
         {% for cour in course %}
             <div class="col-lg-4 col-md-6">
@@ -213,37 +200,36 @@
 
                     <div class="course-content">
                         <span class="author-badge">
-                            <i class="bi bi-person-circle"></i> {{ cour.author }}
+                            <i class="bi bi-person"></i> {{ cour.author.username }}
                         </span>
                         
                         <h3 class="card-title">{{ cour.title }}</h3>
 
-                        <div class="progress-container">
-                          <div class="progress-text">
-    <span>Прогресс</span>
-    <span style="color: #10b981;">{{ cour.progress_percent|default:0 }}%</span>
-</div>
-<div class="custom-progress-bg">
-    <div class="custom-progress-fill" style="width: {{ cour.progress_percent|default:0 }}%;"></div>
-</div>
-                            <div class="mt-2 text-white-50" style="font-size: 11px;">
-                                <i class="bi bi-info-circle"></i> 
-                                {% if cour.progress_percent >= 100 %}
-                                    Курс ийгиликтүү аяктады!
-                                {% else %}
-                                    Окууну улантыңыз
-                                {% endif %}
-                            </div>
+                        <div class="progress-text">
+                            <span>Прогресс</span>
+                            <span style="color: #10b981;">{{ cour.progress_percent|default:0 }}%</span>
                         </div>
-                        
-                       <a href="{% url 'course_view' cour.id cour.first_lesson_id %}" class="btn-premium">
-    Продолжить...
-</a>
+                        <div class="custom-progress-bg">
+                            <div class="custom-progress-fill" style="width: {{ cour.progress_percent|default:0 }}%;"></div>
+                        </div>
+
+                        {% if cour.first_lesson_id %}
+                            <a href="{% url 'course_view' course_id=cour.id lesson_id=cour.first_lesson_id %}" class="btn-premium">
+                                <i class="bi bi-play-fill"></i> Окууну улантуу
+                            </a>
+                        {% else %}
+                            <button class="btn btn-secondary btn-sm w-100 disabled" style="border-radius: 12px;">
+                                Сабактар жок
+                            </button>
+                        {% endif %}
                     </div>
                 </div>
+            </div>
+        {% empty %}
+            <div class="col-12 text-center py-5">
+                <h3 class="text-white-50">Азырынча курстар жок</h3>
             </div>
         {% endfor %}
     </div>
 </div>
-
 {% endblock %}

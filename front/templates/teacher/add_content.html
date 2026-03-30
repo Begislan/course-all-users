@@ -1,0 +1,31 @@
+{% extends 'front/base.html' %} {% block content %}
+<div class="container">
+    <h2>Жаңы мазмун кошуу</h2>
+    
+    <form method="POST" action="{% url 'add_content' lesson.id %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <div class="form-group">
+            <label>Мазмундун түрү:</label>
+            <select name="content_type" class="form-control">
+                <option value="text">Текст</option>
+                <option value="image">Сүрөт (Файл)</option>
+                <option value="video">Видео (YouTube шилтеме)</option>
+                <option value="video_file">Видео (MP4 Файл)</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Текст же Шилтеме:</label>
+            <textarea name="content_data" class="form-control"></textarea>
+        </div>
+
+        <div class="form-group">
+            <label>Компьютерден файл тандаңыз (Сүрөт же Видео):</label>
+            <input type="file" name="file" class="form-control">
+        </div>
+
+        <button type="submit" class="btn btn-success">Сактоо</button>
+    </form>
+</div>
+{% endblock %}
